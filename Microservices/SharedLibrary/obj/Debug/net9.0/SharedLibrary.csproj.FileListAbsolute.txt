@@ -1,0 +1,12 @@
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\bin\Debug\net9.0\SharedLibrary.deps.json
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\bin\Debug\net9.0\SharedLibrary.dll
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\bin\Debug\net9.0\SharedLibrary.pdb
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.csproj.AssemblyReference.cache
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.AssemblyInfoInputs.cache
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.AssemblyInfo.cs
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.csproj.CoreCompileInputs.cache
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.dll
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\refint\SharedLibrary.dll
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\SharedLibrary.pdb
+D:\Project\Fitverse-Web-App\Microservices\SharedLibrary\obj\Debug\net9.0\ref\SharedLibrary.dll
