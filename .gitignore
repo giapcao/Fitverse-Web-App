@@ -1,4 +1,9 @@
 **/Build/
+**/bin/
+**/obj/
+**/out/
+**/.vs/
+**/.idea/
 .vscode/
 .env
 .fake
