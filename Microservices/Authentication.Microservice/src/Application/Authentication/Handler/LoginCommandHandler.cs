@@ -1,3 +1,4 @@
+using System.Linq;
 using Application.Abstractions.Interface;
 using Application.Abstractions.Messaging;
 using Application.Authentication.Command;
@@ -35,10 +36,19 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthDto.LoginRe
         if (verify == PasswordVerificationResult.Failed)
             throw new UnauthorizedAccessException("Login failed");
 
-        var roles = user.Roles.Select(r => r.Id).ToArray();
-        var access = _jwt.CreateAccessToken(user, roles);
+        var roleIds = user.Roles.Select(r => r.Id).ToArray();
+        var roleDtos = user.Roles
+            .Select(r => new RoleDto(r.Id, r.DisplayName))
+            .ToArray();
+
+        var access = _jwt.CreateAccessToken(user, roleIds);
         var refresh = await _refresh.IssueAsync(user.Id, ct);
 
-        return new AuthDto.LoginResultDto(user.Id, user.Email!, user.FullName, roles, new AuthDto.TokenPairDto(access, refresh));
+        return new AuthDto.LoginResultDto(
+            user.Id,
+            user.Email!,
+            user.FullName,
+            roleDtos,
+            new AuthDto.TokenPairDto(access, refresh));
     }
 }

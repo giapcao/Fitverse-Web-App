@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Domain.Entities;
 using Domain.IRepositories;
 using Infrastructure.Common;
@@ -20,26 +23,58 @@ public class AuthenticationRepository : Repository<AppUser>, IAuthenticationRepo
 
     public async Task<AppUser?> GetByIdAsync(Guid id, CancellationToken ct, bool asNoTracking = false)
     {
-        var q = _context.AppUsers.Where(u => u.Id == id);
-        if (asNoTracking) q = q.AsNoTracking();
-        return await q.FirstOrDefaultAsync(ct);
+        var query = _context.AppUsers
+            .Include(u => u.Roles)
+            .Where(u => u.Id == id);
+
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query.FirstOrDefaultAsync(ct);
     }
-    
+
     public async Task<AppUser?> FindByEmailAsync(string email, CancellationToken ct, bool asNoTracking = false)
     {
-        var q = _context.AppUsers.Where(u => u.Email == email);
-        if (asNoTracking) q = q.AsNoTracking();
-        return await q.FirstOrDefaultAsync(ct);
+        var query = _context.AppUsers
+            .Include(u => u.Roles)
+            .Where(u => u.Email == email);
+
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query.FirstOrDefaultAsync(ct);
     }
 
     public async Task UpdatePasswordHashAsync(Guid userId, string newHash, CancellationToken ct)
     {
         var user = await _context.AppUsers.FirstOrDefaultAsync(u => u.Id == userId, ct);
-        if (user is null) return;
+        if (user is null)
+        {
+            return;
+        }
 
         user.PasswordHash = newHash;
-        user.UpdatedAt = DateTime.UtcNow; 
+        user.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync(ct);
     }
 
+    public async Task<IReadOnlyList<AppUser>> GetAllDetailedAsync(CancellationToken ct)
+    {
+        return await _context.AppUsers
+            .Include(u => u.Roles)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    public async Task<AppUser?> GetDetailedByIdAsync(Guid id, CancellationToken ct)
+    {
+        return await _context.AppUsers
+            .Include(u => u.Roles)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == id, ct);
+    }
 }

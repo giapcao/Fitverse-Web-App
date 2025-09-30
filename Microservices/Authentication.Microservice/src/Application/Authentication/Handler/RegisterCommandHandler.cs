@@ -1,9 +1,11 @@
 
 using System.Net;
+using System.Linq;
 using Application.Abstractions.Interface;
 using Application.Abstractions.Messaging;
 using Application.Authentication.Validator;
 using Domain.Entities;
+using Domain.Enums;
 using Domain.IRepositories;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -50,6 +52,17 @@ public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, Un
             UpdatedAt =  DateTime.UtcNow
         };
 
+        var roleRepository = _unitOfWork.Repository<Role>();
+        var customerRole = (await roleRepository.FindAsync(r => r.Id == RoleType.Customer.GetId(), ct))
+            .FirstOrDefault();
+
+        if (customerRole is null)
+        {
+            customerRole = RoleType.Customer.ToEntity();
+            await roleRepository.AddAsync(customerRole, ct);
+        }
+
+        user.Roles.Add(customerRole);
         var hasher = new PasswordHasher<AppUser>();
         user.PasswordHash = hasher.HashPassword(user, request.Password);
 

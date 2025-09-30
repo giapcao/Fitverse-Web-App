@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Context;
@@ -21,6 +21,8 @@ public partial class FitverseDbContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
