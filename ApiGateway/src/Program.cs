@@ -40,8 +40,18 @@ builder.Services.AddReverseProxy()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:5173",)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        });
+});
 var app = builder.Build();
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -50,10 +60,11 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapGet("/health", () => "ok");
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapReverseProxy();
+app.MapReverseProxy().RequireCors("AllowFrontend");
 
 app.Run("http://0.0.0.0:8080");
