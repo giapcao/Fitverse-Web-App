@@ -7,7 +7,7 @@ public class VerifyPasswordCommandValidator : AbstractValidator<ResetPasswordWit
 {
     public VerifyPasswordCommandValidator()
     {
-        RuleFor(x => x.ResetToken).NotEmpty().MaximumLength(255);
+        RuleFor(x => x.ResetToken).NotEmpty();
         RuleFor(x => x.NewPassword)
             .NotEmpty()
             .MinimumLength(8)
