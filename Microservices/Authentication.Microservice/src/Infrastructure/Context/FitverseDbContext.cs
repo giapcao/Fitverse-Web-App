@@ -20,6 +20,8 @@ public partial class FitverseDbContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<ExternalLogin> ExternalLogins { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
     }
@@ -89,6 +91,8 @@ public partial class FitverseDbContext : DbContext
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.LastLoginAt)
+                .HasColumnName("last_login_at");
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
@@ -109,6 +113,39 @@ public partial class FitverseDbContext : DbContext
                     });
         });
 
+        modelBuilder.Entity<ExternalLogin>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("external_login_pkey");
+
+            entity.ToTable("external_login");
+
+            entity.HasIndex(e => new { e.Provider, e.ProviderUserId })
+                .IsUnique()
+                .HasDatabaseName("ux_external_login_provider");
+
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("ix_external_login_user_id");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Provider)
+                .HasMaxLength(64)
+                .HasColumnName("provider");
+            entity.Property(e => e.ProviderUserId)
+                .HasMaxLength(256)
+                .HasColumnName("provider_user_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_external_login_user");
+        });
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("role_pkey");
@@ -124,3 +161,7 @@ public partial class FitverseDbContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
+
+
+
