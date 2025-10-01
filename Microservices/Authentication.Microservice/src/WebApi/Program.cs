@@ -88,6 +88,10 @@ builder.Services
     .ValidateOnStart();
 
 builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection("Otp"));
+builder.Services
+    .AddOptions<Options.GoogleOAuthOptions>()
+    .Bind(builder.Configuration.GetSection("Google"));
+
 
 static byte[] GetKeyBytes(string key)
 {

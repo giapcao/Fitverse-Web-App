@@ -11,6 +11,19 @@ public class AuthDto
         string FullName,
         IEnumerable<RoleDto> Roles,
         TokenPairDto Tokens);
+    public sealed class GoogleLoginRequestDto
+    {
+        public string Code { get; set; } = default!;
+        public string State { get; set; } = default!;
+        public string? RedirectUri { get; set; }
+    }
+
+    public sealed record GoogleAuthUrlDto(string AuthorizationUrl, string State);
+
+    public sealed class GoogleIdTokenRequestDto
+    {
+        public string IdToken { get; set; } = default!;
+    }
 
     public sealed record VerifyEmailResultDto(bool Success);
 
@@ -42,3 +55,4 @@ public class AuthDto
         public string NewPassword { get; set; } = default!;
     }
 }
+

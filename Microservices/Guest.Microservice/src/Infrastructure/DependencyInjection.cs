@@ -35,7 +35,7 @@ namespace Infrastructure
                     config.DatabasePassword,
                     config.DatabaseProvider);
 
-            scaffold.UpdateAppSettings();
+            // scaffold.UpdateAppSettings();
             string solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? "";
             if (solutionDirectory != null)
             {

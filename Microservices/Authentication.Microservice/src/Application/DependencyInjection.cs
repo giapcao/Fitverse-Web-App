@@ -16,6 +16,7 @@ namespace Application
         {
             var assembly = typeof(DependencyInjection).Assembly;
             services.AddScoped<IOtpStore, RedisOtpStore>();
+            services.AddScoped<IGoogleOAuthStateStore, GoogleOAuthStateStore>();
             services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
             services.AddValidatorsFromAssembly(assembly);
             var config = TypeAdapterConfig.GlobalSettings;
@@ -30,3 +31,4 @@ namespace Application
         }
     }
 }
+

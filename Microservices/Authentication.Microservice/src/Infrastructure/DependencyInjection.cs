@@ -25,9 +25,14 @@ namespace Infrastructure
         {
             services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
+            services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();
             services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
             services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-            services.AddScoped<IRefreshTokenStore,RefreshTokenStore>();
+            services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
+            services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+            });
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUser, CurrentUser>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -52,27 +57,29 @@ namespace Infrastructure
             {
                 DotNetEnv.Env.Load(Path.Combine(solutionDirectory, ".env"));
             }
-            services.AddMassTransit(busConfigurator => {
+            services.AddMassTransit(busConfigurator =>
+            {
                 busConfigurator.SetKebabCaseEndpointNameFormatter();
                 // busConfigurator.AddConsumer<UserCreatedConsumer>();
-                busConfigurator.UsingRabbitMq((context, configurator) =>{
+                busConfigurator.UsingRabbitMq((context, configurator) =>
+                {
                     if (config.IsRabbitMqCloud)
                     {
                         configurator.Host(config.RabbitMqUrl);
                     }
                     else
                     {
-                        configurator.Host(new Uri($"rabbitmq://{config.RabbitMqHost}:{config.RabbitMqPort}/"), h=>{
+                        configurator.Host(new Uri($"rabbitmq://{config.RabbitMqHost}:{config.RabbitMqPort}/"), h =>
+                        {
                             h.Username(config.RabbitMqUser);
                             h.Password(config.RabbitMqPassword);
                         });
                     }
                     configurator.ConfigureEndpoints(context);
                 });
-                
             });
             return services;
         }
-        
     }
 }
+
