@@ -1,8 +1,8 @@
-﻿namespace Domain.Entities;
+namespace Domain.Entities;
 
 public partial class Role
 {
-    public string Id { get; set; } = null!;
+    public Guid Id { get; set; }
 
     public string DisplayName { get; set; } = null!;
 

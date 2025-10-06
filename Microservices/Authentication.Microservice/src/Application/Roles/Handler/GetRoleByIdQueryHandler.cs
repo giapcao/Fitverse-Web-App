@@ -21,11 +21,10 @@ public sealed class GetRoleByIdQueryHandler : IQueryHandler<GetRoleByIdQuery, Ro
 
     public async Task<Result<RoleDto>> Handle(GetRoleByIdQuery request, CancellationToken ct)
     {
-        var normalizedId = request.Id.Trim();
-        var role = (await _roleRepository.FindAsync(r => r.Id == normalizedId, ct)).FirstOrDefault();
+        var role = (await _roleRepository.FindAsync(r => r.Id == request.Id, ct)).FirstOrDefault();
         if (role is null)
         {
-            return Result.Failure<RoleDto>(new Error("Role.NotFound", $"Role with id {normalizedId} was not found."));
+            return Result.Failure<RoleDto>(new Error("Role.NotFound", $"Role with id {request.Id} was not found."));
         }
 
         return Result.Success(new RoleDto(role.Id, role.DisplayName));

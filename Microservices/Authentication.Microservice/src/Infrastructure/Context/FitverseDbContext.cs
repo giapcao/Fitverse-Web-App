@@ -109,7 +109,7 @@ public partial class FitverseDbContext : DbContext
                         j.HasKey("UserId", "RoleId").HasName("user_role_pkey");
                         j.ToTable("user_role");
                         j.IndexerProperty<Guid>("UserId").HasColumnName("user_id");
-                        j.IndexerProperty<string>("RoleId").HasColumnName("role_id");
+                        j.IndexerProperty<Guid>("RoleId").HasColumnName("role_id");
                     });
         });
 
@@ -152,7 +152,9 @@ public partial class FitverseDbContext : DbContext
 
             entity.ToTable("role");
 
-            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
             entity.Property(e => e.DisplayName).HasColumnName("display_name");
         });
 

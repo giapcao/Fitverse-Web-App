@@ -14,31 +14,32 @@ namespace Application.Roles.Handler;
 public sealed class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleDto>
 {
     private readonly IRepository<Role> _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public CreateRoleCommandHandler(IRepository<Role> roleRepository, IUnitOfWork unitOfWork)
+    public CreateRoleCommandHandler(IRepository<Role> roleRepository)
     {
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<RoleDto>> Handle(CreateRoleCommand request, CancellationToken ct)
     {
-        var normalizedId = request.Id.Trim();
-        var existing = await _roleRepository.FindAsync(r => r.Id == normalizedId, ct);
+        var normalizedName = request.DisplayName.Trim();
+        var normalizedNameLower = normalizedName.ToLowerInvariant();
+
+        var existing = await _roleRepository.FindAsync(
+            r => r.DisplayName != null && r.DisplayName.ToLower() == normalizedNameLower,
+            ct);
         if (existing.Any())
         {
-            return Result.Failure<RoleDto>(new Error("Role.Exists", $"Role with id {normalizedId} already exists."));
+            return Result.Failure<RoleDto>(new Error("Role.Exists", $"Role with display name {normalizedName} already exists."));
         }
 
         var role = new Role
         {
-            Id = normalizedId,
-            DisplayName = request.DisplayName.Trim()
+            Id = Guid.NewGuid(),
+            DisplayName = normalizedName
         };
 
         await _roleRepository.AddAsync(role, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success(new RoleDto(role.Id, role.DisplayName));
     }

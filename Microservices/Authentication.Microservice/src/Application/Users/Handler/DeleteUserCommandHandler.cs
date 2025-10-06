@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.Users.Command;
 using Domain.IRepositories;
-using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Users.Handler;
@@ -11,14 +10,11 @@ namespace Application.Users.Handler;
 public sealed class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand>
 {
     private readonly IAuthenticationRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public DeleteUserCommandHandler(
-        IAuthenticationRepository userRepository,
-        IUnitOfWork unitOfWork)
+        IAuthenticationRepository userRepository)
     {
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteUserCommand request, CancellationToken ct)
@@ -30,7 +26,6 @@ public sealed class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand
         }
 
         _userRepository.Delete(user);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();
     }

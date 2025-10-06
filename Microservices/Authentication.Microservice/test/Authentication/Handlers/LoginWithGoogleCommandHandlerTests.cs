@@ -76,7 +76,7 @@ public class LoginWithGoogleCommandHandlerTests
             FullName = "User",
             IsActive = true,
             EmailConfirmed = true,
-            Roles = new List<Role> { new() { Id = RoleType.Customer.GetId(), DisplayName = RoleType.Customer.GetDisplayName() } }
+            Roles = new List<Role> { RoleType.Customer.ToEntity() }
         };
 
         var externalLogin = new ExternalLogin
@@ -117,7 +117,7 @@ public class LoginWithGoogleCommandHandlerTests
             FullName = string.Empty,
             IsActive = true,
             EmailConfirmed = false,
-            Roles = new List<Role> { new() { Id = RoleType.Customer.GetId(), DisplayName = RoleType.Customer.GetDisplayName() } }
+            Roles = new List<Role> { RoleType.Customer.ToEntity() }
         };
 
         _externalLoginRepository
@@ -193,7 +193,7 @@ public class LoginWithGoogleCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         _authRepository.Verify(x => x.AddAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()), Times.Once);
         _externalLoginRepository.Verify(x => x.AddAsync(It.IsAny<ExternalLogin>(), It.IsAny<CancellationToken>()), Times.Once);
-        _roleRepository.Verify(x => x.AddAsync(It.Is<Role>(r => r.Id == RoleType.Customer.GetId()), It.IsAny<CancellationToken>()), Times.Once);
+        _roleRepository.Verify(x => x.AddAsync(It.Is<Role>(r => r.DisplayName == RoleType.Customer.GetDisplayName()), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class LoginWithGoogleCommandHandlerTests
             Email = "user@example.com",
             IsActive = false,
             EmailConfirmed = true,
-            Roles = new List<Role> { new() { Id = RoleType.Customer.GetId(), DisplayName = RoleType.Customer.GetDisplayName() } }
+            Roles = new List<Role> { RoleType.Customer.ToEntity() }
         };
 
         var external = new ExternalLogin
@@ -246,6 +246,10 @@ public class LoginWithGoogleCommandHandlerTests
             handler.Handle(new LoginWithGoogleViaIdTokenCommand("id-token"), CancellationToken.None));
     }
 }
+
+
+
+
 
 
 

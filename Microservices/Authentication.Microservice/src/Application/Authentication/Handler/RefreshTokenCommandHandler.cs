@@ -33,8 +33,8 @@ public sealed class RefreshCommandHandler : ICommandHandler<RefreshCommand, Auth
         var (ok, _) = await _refresh.ValidateAsync(user.Id, request.RefreshToken, ct);
         if (!ok) throw new UnauthorizedAccessException("Refresh token is invalid");
         
-        var roles = user.Roles.Select(r => r.Id);
-        var newAccess = _jwt.CreateAccessToken(user, roles);
+        var roleNames = user.Roles.Select(r => r.DisplayName);
+        var newAccess = _jwt.CreateAccessToken(user, roleNames);
         var newRefresh = await _refresh.IssueAsync(user.Id, ct);
 
         return Result.Success(new AuthDto.TokenPairDto(newAccess, newRefresh));

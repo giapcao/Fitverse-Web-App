@@ -12,25 +12,21 @@ namespace Application.Roles.Handler;
 public sealed class DeleteRoleCommandHandler : ICommandHandler<DeleteRoleCommand>
 {
     private readonly IRepository<Role> _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteRoleCommandHandler(IRepository<Role> roleRepository, IUnitOfWork unitOfWork)
+    public DeleteRoleCommandHandler(IRepository<Role> roleRepository)
     {
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteRoleCommand request, CancellationToken ct)
     {
-        var normalizedId = request.Id.Trim();
-        var role = (await _roleRepository.FindAsync(r => r.Id == normalizedId, ct)).FirstOrDefault();
+        var role = (await _roleRepository.FindAsync(r => r.Id == request.Id, ct)).FirstOrDefault();
         if (role is null)
         {
-            return Result.Failure(new Error("Role.NotFound", $"Role with id {normalizedId} was not found."));
+            return Result.Failure(new Error("Role.NotFound", $"Role with id {request.Id} was not found."));
         }
 
         _roleRepository.Delete(role);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();
     }

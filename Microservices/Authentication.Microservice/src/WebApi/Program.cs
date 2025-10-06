@@ -12,6 +12,7 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Infrastructure.Context;
 using Microsoft.OpenApi.Models;
+using SharedLibrary.Common;
 using SharedLibrary.Configs;
 using SharedLibrary.Utils;
 using StackExchange.Redis;
@@ -127,25 +128,25 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     return ConnectionMultiplexer.Connect(cfg);
 });
 
-var jwt = builder.Configuration.GetSection("Jwt").Get<Options.JwtOptions>()!;
-var signingKey = new SymmetricSecurityKey(GetKeyBytes(jwt.Key));
-
-builder.Services.AddSingleton(signingKey);
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, o =>
-    {
-        o.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidIssuer = jwt.Issuer,
-            ValidAudience = jwt.Audience,
-            IssuerSigningKey = signingKey,
-            ValidateIssuerSigningKey = true,
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
+// var jwt = builder.Configuration.GetSection("Jwt").Get<Options.JwtOptions>()!;
+// var signingKey = new SymmetricSecurityKey(GetKeyBytes(jwt.Key));
+//
+// builder.Services.AddSingleton(signingKey);
+// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, o =>
+//     {
+//         o.TokenValidationParameters = new TokenValidationParameters
+//         {
+//             ValidIssuer = jwt.Issuer,
+//             ValidAudience = jwt.Audience,
+//             IssuerSigningKey = signingKey,
+//             ValidateIssuerSigningKey = true,
+//             ValidateIssuer = true,
+//             ValidateAudience = true,
+//             ValidateLifetime = true,
+//             ClockSkew = TimeSpan.Zero
+//         };
+//     });
 
 
 
@@ -165,7 +166,7 @@ builder.Services.AddDbContext<FitverseDbContext>((sp, options) =>
     }
 });
 
-
+builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()
     .AddInfrastructure();

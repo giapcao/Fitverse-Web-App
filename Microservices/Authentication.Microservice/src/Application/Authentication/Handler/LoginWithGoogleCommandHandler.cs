@@ -105,17 +105,16 @@ public sealed class LoginWithGoogleCommandHandler :
 
             ApplyGoogleProfile(user, googleUser, now);
             _authRepository.Update(user);
-            await _unitOfWork.SaveChangesAsync(ct);
         }
         else
         {
             user = await LinkOrCreateUserAsync(googleUser, normalizedEmail, now, ct);
         }
 
-        var roleIds = user.Roles.Select(r => r.Id).ToArray();
+        var roleNames = user.Roles.Select(r => r.DisplayName).ToArray();
         var roleDtos = user.Roles.Select(r => new RoleDto(r.Id, r.DisplayName)).ToArray();
 
-        var accessToken = _jwt.CreateAccessToken(user, roleIds);
+        var accessToken = _jwt.CreateAccessToken(user, roleNames);
         var refreshToken = await _refreshTokenStore.IssueAsync(user.Id, ct);
 
         return new AuthDto.LoginResultDto(
@@ -164,7 +163,6 @@ public sealed class LoginWithGoogleCommandHandler :
         };
 
         await _externalLoginRepository.AddAsync(externalLogin, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
 
         return user;
@@ -173,10 +171,18 @@ public sealed class LoginWithGoogleCommandHandler :
     private async Task<AppUser> CreateUserAsync(GoogleOAuthUser googleUser, string normalizedEmail, DateTime now, CancellationToken ct)
     {
         var roleRepository = _unitOfWork.Repository<Role>();
-        var customerRole = (await roleRepository.FindAsync(r => r.Id == RoleType.Customer.GetId(), ct)).FirstOrDefault();
+        var customerRoleName = RoleType.Customer.GetDisplayName();
+        var normalizedRoleName = customerRoleName.ToLowerInvariant();
+        var customerRole = (await roleRepository.FindAsync(
+            r => r.DisplayName != null && r.DisplayName.ToLower() == normalizedRoleName,
+            ct)).FirstOrDefault();
         if (customerRole is null)
         {
-            customerRole = RoleType.Customer.ToEntity();
+            customerRole = new Role
+            {
+                Id = Guid.NewGuid(),
+                DisplayName = customerRoleName
+            };
             await roleRepository.AddAsync(customerRole, ct);
         }
 
@@ -198,12 +204,9 @@ public sealed class LoginWithGoogleCommandHandler :
         user.Roles.Add(customerRole);
 
         await _authRepository.AddAsync(user, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return user;
-    }
-
-    private static void ApplyGoogleProfile(AppUser user, GoogleOAuthUser googleUser, DateTime now)
+    }    private static void ApplyGoogleProfile(AppUser user, GoogleOAuthUser googleUser, DateTime now)
     {
         if (!user.EmailConfirmed && googleUser.EmailVerified)
         {
@@ -224,6 +227,9 @@ public sealed class LoginWithGoogleCommandHandler :
         user.UpdatedAt = now;
     }
 }
+
+
+
 
 
 

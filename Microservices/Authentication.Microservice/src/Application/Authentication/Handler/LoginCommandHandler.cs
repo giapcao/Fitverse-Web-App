@@ -36,12 +36,12 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthDto.LoginRe
         if (verify == PasswordVerificationResult.Failed)
             throw new UnauthorizedAccessException("Login failed");
 
-        var roleIds = user.Roles.Select(r => r.Id).ToArray();
+        var roleNames = user.Roles.Select(r => r.DisplayName).ToArray();
         var roleDtos = user.Roles
             .Select(r => new RoleDto(r.Id, r.DisplayName))
             .ToArray();
 
-        var access = _jwt.CreateAccessToken(user, roleIds);
+        var access = _jwt.CreateAccessToken(user, roleNames);
         var refresh = await _refresh.IssueAsync(user.Id, ct);
 
         return new AuthDto.LoginResultDto(
@@ -52,3 +52,4 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthDto.LoginRe
             new AuthDto.TokenPairDto(access, refresh));
     }
 }
+

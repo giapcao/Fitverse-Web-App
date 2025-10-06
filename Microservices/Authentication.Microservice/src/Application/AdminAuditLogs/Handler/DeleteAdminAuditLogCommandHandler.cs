@@ -12,12 +12,10 @@ namespace Application.AdminAuditLogs.Handler;
 public sealed class DeleteAdminAuditLogCommandHandler : ICommandHandler<DeleteAdminAuditLogCommand>
 {
     private readonly IRepository<AdminAuditLog> _auditRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public DeleteAdminAuditLogCommandHandler(IRepository<AdminAuditLog> auditRepository, IUnitOfWork unitOfWork)
+    public DeleteAdminAuditLogCommandHandler(IRepository<AdminAuditLog> auditRepository)
     {
         _auditRepository = auditRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteAdminAuditLogCommand request, CancellationToken ct)
@@ -29,7 +27,6 @@ public sealed class DeleteAdminAuditLogCommandHandler : ICommandHandler<DeleteAd
         }
 
         _auditRepository.Delete(auditLog);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();
     }

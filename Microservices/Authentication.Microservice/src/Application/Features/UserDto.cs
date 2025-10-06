@@ -18,4 +18,5 @@ public sealed record UserDto(
     bool EmailConfirmed,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IEnumerable<string> Roles);
+    IEnumerable<Guid> Roles);
+
