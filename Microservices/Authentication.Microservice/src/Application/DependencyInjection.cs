@@ -16,17 +16,18 @@ namespace Application
         {
             var assembly = typeof(DependencyInjection).Assembly;
             services.AddScoped<IOtpStore, RedisOtpStore>();
+            services.AddScoped<IGoogleOAuthStateStore, GoogleOAuthStateStore>();
             services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
             services.AddValidatorsFromAssembly(assembly);
             var config = TypeAdapterConfig.GlobalSettings;
-            MappingConfig.RegisterMappings(config); 
-            
+            MappingConfig.RegisterMappings(config);
+
             services.AddSingleton(config);
             services.AddScoped<IMapper, ServiceMapper>();
             services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));
+            services.AddScoped(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
             services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
             return services;
-
         }
     }
 }

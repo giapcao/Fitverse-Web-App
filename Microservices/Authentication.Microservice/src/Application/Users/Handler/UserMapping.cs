@@ -9,7 +9,7 @@ internal static class UserMapping
 {
     public static UserDto ToDto(AppUser user)
     {
-        var roles = user.Roles?.Select(r => r.Id).ToArray() ?? Array.Empty<string>();
+        var roles = user.Roles?.Select(r => r.Id).ToArray() ?? Array.Empty<Guid>();
 
         return new UserDto(
             user.Id,

@@ -3,4 +3,4 @@ using Application.Features;
 
 namespace Application.Roles.Command;
 
-public sealed record CreateRoleCommand(string Id, string DisplayName) : ICommand<RoleDto>;
+public sealed record CreateRoleCommand(string DisplayName) : ICommand<RoleDto>;

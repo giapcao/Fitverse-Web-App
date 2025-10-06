@@ -73,5 +73,5 @@ app.MapControllers();
 
 app.Run();
 
-AutoScaffold.UpdateAppSettingsFile("appsettings.json", "default");
-AutoScaffold.UpdateAppSettingsFile("appsettings.Development.json", "default");
+// AutoScaffold.UpdateAppSettingsFile("appsettings.json", "default");
+// AutoScaffold.UpdateAppSettingsFile("appsettings.Development.json", "default");

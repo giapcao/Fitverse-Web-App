@@ -7,8 +7,8 @@ using Application.Features;
 using Application.Users.Command;
 using Domain.Entities;
 using Domain.IRepositories;
-using Microsoft.AspNetCore.Identity;
 using SharedLibrary.Common;
+using Microsoft.AspNetCore.Identity;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Users.Handler;
@@ -17,18 +17,15 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
 {
     private readonly IAuthenticationRepository _userRepository;
     private readonly IRepository<Role> _roleRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IPasswordHasher<AppUser> _passwordHasher;
 
     public CreateUserCommandHandler(
         IAuthenticationRepository userRepository,
         IRepository<Role> roleRepository,
-        IUnitOfWork unitOfWork,
         IPasswordHasher<AppUser> passwordHasher)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
-        _unitOfWork = unitOfWork;
         _passwordHasher = passwordHasher;
     }
 
@@ -65,7 +62,7 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
 
         if (request.RoleIds is not null && request.RoleIds.Any())
         {
-            var distinctRoleIds = request.RoleIds.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+            var distinctRoleIds = request.RoleIds.Where(id => id != Guid.Empty).Distinct().ToArray();
             if (distinctRoleIds.Length > 0)
             {
                 var roles = await _roleRepository.FindAsync(r => distinctRoleIds.Contains(r.Id), ct);
@@ -77,7 +74,6 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
         }
 
         await _userRepository.AddAsync(user, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success(UserMapping.ToDto(user));
     }

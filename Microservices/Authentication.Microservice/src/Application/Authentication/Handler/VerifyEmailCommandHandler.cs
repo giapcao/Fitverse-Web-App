@@ -4,7 +4,6 @@ using Application.Abstractions.Messaging;
 using Application.Authentication.Command;
 using Application.Features;
 using Domain.IRepositories;
-using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Authentication.Handler;
@@ -13,12 +12,11 @@ public sealed class VerifyEmailCommandHandler : ICommandHandler<VerifyEmailComma
 {
     private readonly IJwtTokenGenerator _jwt;
     private readonly IAuthenticationRepository _authen;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public VerifyEmailCommandHandler(IJwtTokenGenerator jwt, IAuthenticationRepository authen,IUnitOfWork unitOfWork)
+    public VerifyEmailCommandHandler(IJwtTokenGenerator jwt, IAuthenticationRepository authen)
     {
-        _jwt = jwt; _authen = authen;
-        _unitOfWork = unitOfWork;
+        _jwt = jwt;
+        _authen = authen;
     }
 
     public async Task<Result<AuthDto.VerifyEmailResultDto>> Handle(VerifyEmailCommand request, CancellationToken ct)
@@ -37,7 +35,7 @@ public sealed class VerifyEmailCommandHandler : ICommandHandler<VerifyEmailComma
         user.EmailConfirmed = true;
         user.UpdatedAt = DateTime.UtcNow;
         _authen.Update(user);
-        await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success(new AuthDto.VerifyEmailResultDto(true));
     }
 }
+

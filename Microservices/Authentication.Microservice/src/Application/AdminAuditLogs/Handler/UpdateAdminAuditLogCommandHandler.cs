@@ -13,12 +13,10 @@ namespace Application.AdminAuditLogs.Handler;
 public sealed class UpdateAdminAuditLogCommandHandler : ICommandHandler<UpdateAdminAuditLogCommand, AdminAuditLogDto>
 {
     private readonly IRepository<AdminAuditLog> _auditRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateAdminAuditLogCommandHandler(IRepository<AdminAuditLog> auditRepository, IUnitOfWork unitOfWork)
+    public UpdateAdminAuditLogCommandHandler(IRepository<AdminAuditLog> auditRepository)
     {
         _auditRepository = auditRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<AdminAuditLogDto>> Handle(UpdateAdminAuditLogCommand request, CancellationToken ct)
@@ -45,7 +43,6 @@ public sealed class UpdateAdminAuditLogCommandHandler : ICommandHandler<UpdateAd
         }
 
         _auditRepository.Update(auditLog);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success(AdminAuditLogMapping.ToDto(auditLog));
     }

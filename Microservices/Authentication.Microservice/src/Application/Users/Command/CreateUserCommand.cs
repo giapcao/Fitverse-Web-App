@@ -18,4 +18,5 @@ public sealed record CreateUserCommand(
     double? HomeLng,
     bool? IsActive,
     bool? EmailConfirmed,
-    IEnumerable<string>? RoleIds) : ICommand<UserDto>;
+    IEnumerable<Guid>? RoleIds) : ICommand<UserDto>;
+
