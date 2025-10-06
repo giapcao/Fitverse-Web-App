@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using Application.Abstractions.Interface;
 using Domain.Entities;
@@ -22,7 +25,7 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         _creds = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
     }
 
-    public string CreateAccessToken(AppUser user, IEnumerable<string> roles)
+    public string CreateAccessToken(AppUser user, IEnumerable<string> roleNames)
     {
         var now = DateTime.UtcNow;
 
@@ -35,19 +38,22 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
             new(ClaimTypes.Name, user.FullName),
             new("sid", user.SecurityStamp)
         };
-        claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+        var roleClaims = (roleNames ?? Enumerable.Empty<string>())
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(r => new Claim(ClaimTypes.Role, r));
+        claims.AddRange(roleClaims);
 
         var token = new JwtSecurityToken(
             issuer: _opt.Issuer,
             audience: _opt.Audience,
             claims: claims,
-            notBefore: now,                                        
+            notBefore: now,
             expires: now.AddMinutes(_opt.AccessTokenMinutes),
             signingCredentials: _creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
     public string CreatePurposeToken(Guid userId, string purpose, TimeSpan life)
     {
         var now = DateTime.UtcNow;
@@ -77,7 +83,7 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         {
             ValidIssuer = _opt.Issuer,
             ValidAudience = _opt.Audience,
-            IssuerSigningKey = _signingKey,             
+            IssuerSigningKey = _signingKey,
             ValidateIssuerSigningKey = true,
             ValidateIssuer = true,
             ValidateAudience = true,
@@ -92,3 +98,9 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         return principal;
     }
 }
+
+
+
+
+
+

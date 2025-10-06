@@ -15,16 +15,13 @@ public sealed class CreateAdminAuditLogCommandHandler : ICommandHandler<CreateAd
 {
     private readonly IRepository<AdminAuditLog> _auditRepository;
     private readonly IAuthenticationRepository _userRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public CreateAdminAuditLogCommandHandler(
         IRepository<AdminAuditLog> auditRepository,
-        IAuthenticationRepository userRepository,
-        IUnitOfWork unitOfWork)
+        IAuthenticationRepository userRepository)
     {
         _auditRepository = auditRepository;
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<AdminAuditLogDto>> Handle(CreateAdminAuditLogCommand request, CancellationToken ct)
@@ -46,7 +43,6 @@ public sealed class CreateAdminAuditLogCommandHandler : ICommandHandler<CreateAd
         };
 
         await _auditRepository.AddAsync(auditLog, ct);
-        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success(AdminAuditLogMapping.ToDto(auditLog));
     }

@@ -19,4 +19,5 @@ public sealed record UpdateUserCommand(
     bool? IsActive,
     bool? EmailConfirmed,
     string? Password,
-    IEnumerable<string>? RoleIds) : ICommand<UserDto>;
+    IEnumerable<Guid>? RoleIds) : ICommand<UserDto>;
+

@@ -20,7 +20,8 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .NotEmpty()
             .MaximumLength(100);
 
-        RuleForEach(x => x.RoleIds ?? Array.Empty<string>())
-            .NotEmpty().WithMessage("Role id cannot be empty when provided.");
+        RuleForEach(x => x.RoleIds ?? Array.Empty<Guid>())
+            .Must(id => id != Guid.Empty)
+            .WithMessage("Role id cannot be empty when provided.");
     }
 }

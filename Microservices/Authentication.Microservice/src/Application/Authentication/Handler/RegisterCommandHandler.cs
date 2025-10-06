@@ -1,3 +1,4 @@
+using System;
 
 using System.Net;
 using System.Linq;
@@ -53,12 +54,19 @@ public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, Un
         };
 
         var roleRepository = _unitOfWork.Repository<Role>();
-        var customerRole = (await roleRepository.FindAsync(r => r.Id == RoleType.Customer.GetId(), ct))
-            .FirstOrDefault();
+        var customerRoleName = RoleType.Customer.GetDisplayName();
+        var normalizedRoleName = customerRoleName.ToLowerInvariant();
+        var customerRole = (await roleRepository.FindAsync(
+            r => r.DisplayName != null && r.DisplayName.ToLower() == normalizedRoleName,
+            ct)).FirstOrDefault();
 
         if (customerRole is null)
         {
-            customerRole = RoleType.Customer.ToEntity();
+            customerRole = new Role
+            {
+                Id = Guid.NewGuid(),
+                DisplayName = customerRoleName
+            };
             await roleRepository.AddAsync(customerRole, ct);
         }
 
@@ -77,10 +85,10 @@ public sealed class RegisterCommandHandler : ICommandHandler<RegisterCommand, Un
 
         await _email.SendAsync(
             user.Email!,
-            "Xác thực email",
-            $"Nhấp để xác thực: {link}",
+            "X�c th?c email",
+            $"Nh?p �? x�c th?c: {link}",
             ct);
-        await _unitOfWork.SaveChangesAsync(ct);
         return Result.Success(Unit.Value);
     }
 }
+

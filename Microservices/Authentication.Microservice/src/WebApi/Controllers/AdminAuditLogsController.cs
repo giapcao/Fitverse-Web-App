@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.AdminAuditLogs.Command;
 using Application.Features;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using SharedLibrary.Common;
 
 namespace WebApi.Controllers;
 
+[Authorize(Policy = "IsAdmin")]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/admin-audit-logs/v{version:apiVersion}")]
@@ -93,3 +95,4 @@ public class AdminAuditLogsController : ApiController
         return NoContent();
     }
 }
+
