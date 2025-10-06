@@ -42,6 +42,8 @@ public static class AuthExtensions
             options.AddPolicy("IsCoach", p => p.RequireRole("Coach"));
             options.AddPolicy("IsAdmin", p => p.RequireRole("Admin"));
             options.AddPolicy("IsSupport", p => p.RequireRole("Support"));
+            options.AddPolicy("IsSupportOrCustomer", p => p.RequireRole("Support", "Customer"));
+            
         });
 
         return services;
