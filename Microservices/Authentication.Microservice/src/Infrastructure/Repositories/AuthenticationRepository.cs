@@ -78,3 +78,4 @@ public class AuthenticationRepository : Repository<AppUser>, IAuthenticationRepo
             .FirstOrDefaultAsync(u => u.Id == id, ct);
     }
 }
+

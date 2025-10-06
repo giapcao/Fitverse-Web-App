@@ -1,15 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-
-
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="DotNetEnv" Version="3.1.1"/>
+        <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
         <PackageReference Include="MailKit" Version="4.13.0" />
         <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.4"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
@@ -32,6 +31,5 @@
     <ItemGroup>
         <ProjectReference Include="..\Application\Application.csproj"/>
     </ItemGroup>
-
 
 </Project>

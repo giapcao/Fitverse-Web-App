@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Domain.Entities;
 
@@ -14,15 +14,6 @@ public enum RoleType
 
 public static class RoleTypeExtensions
 {
-    public static string GetId(this RoleType role) => role switch
-    {
-        RoleType.Customer => "RO001",
-        RoleType.Coach => "RO002",
-        RoleType.Admin => "RO003",
-        RoleType.Support => "RO004",
-        _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
-    };
-
     public static string GetDisplayName(this RoleType role) => role switch
     {
         RoleType.Customer => "Customer",
@@ -34,7 +25,7 @@ public static class RoleTypeExtensions
 
     public static Role ToEntity(this RoleType role) => new()
     {
-        Id = role.GetId(),
+        Id = Guid.NewGuid(),
         DisplayName = role.GetDisplayName()
     };
 
@@ -46,3 +37,4 @@ public static class RoleTypeExtensions
         RoleType.Support.ToEntity()
     };
 }
+
