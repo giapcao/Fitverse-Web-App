@@ -13,7 +13,7 @@ using SharedLibrary.Common;
 
 namespace WebApi.Controllers;
 
-[Authorize(Policy = "IsAdmin")]
+[Authorize]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/[controller]/v{version:apiVersion}")]
