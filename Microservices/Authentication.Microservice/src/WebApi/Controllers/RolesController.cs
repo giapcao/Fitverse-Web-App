@@ -13,7 +13,7 @@ using SharedLibrary.Common;
 
 namespace WebApi.Controllers;
 
-[Authorize]
+[Authorize(Policy = "IsAdmin")]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/[controller]/v{version:apiVersion}")]
@@ -22,7 +22,7 @@ public class RolesController : ApiController
     public RolesController(IMediator mediator) : base(mediator)
     {
     }
-    [Authorize(Policy = "IsAdmin")]
+
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<RoleDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(CancellationToken ct)
