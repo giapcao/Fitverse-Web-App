@@ -205,7 +205,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{644D0020-7
 		Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll = Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll
 		Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll = Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll
 		Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll = Coach.Microservice\test\Build\bin\Debug\net9.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.ObjectModel.resources.dll
-		Coach.Microservice\test\Build\obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs = Coach.Microservice\test\Build\obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+		Coach.Microservice\test\Build\obj\Debug\net9.0\.NETCoreApp,Version = v9.0.AssemblyAttributes.cs = Coach.Microservice\test\Build\obj\Debug\net9.0\.NETCoreApp,Version=v9.0.AssemblyAttributes.cs
 		Coach.Microservice\test\Build\obj\Debug\net9.0\ref\test.dll = Coach.Microservice\test\Build\obj\Debug\net9.0\ref\test.dll
 		Coach.Microservice\test\Build\obj\Debug\net9.0\refint\test.dll = Coach.Microservice\test\Build\obj\Debug\net9.0\refint\test.dll
 		Coach.Microservice\test\Build\obj\Debug\net9.0\test.AssemblyInfo.cs = Coach.Microservice\test\Build\obj\Debug\net9.0\test.AssemblyInfo.cs
@@ -236,6 +236,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Coach.Micros
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI", "Coach.Microservice\src\WebAPI\WebAPI.csproj", "{130182F6-4D18-4793-BE08-788283CBE1B2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Payment.Microservice", "Payment.Microservice", "{EFACA27B-7EBB-40FA-8DD6-CDA92545F7AA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{29B3AAD0-F078-4D58-9BF1-B6DA2376A286}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Payment.Microservice\src\Application\Application.csproj", "{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Payment.Microservice\src\Domain\Domain.csproj", "{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Payment.Microservice\src\Infrastructure\Infrastructure.csproj", "{3D5F0C1F-FEDC-4E09-A605-44DB709F181D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "Payment.Microservice\src\WebApi\WebApi.csproj", "{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -263,6 +275,11 @@ Global
 		{9C4052C9-AA81-4C35-91DD-280D50847EDD} = {85115193-7767-4C55-8A02-8EA6AC987C8B}
 		{581639C3-44ED-435B-A716-9D56BB10DDC4} = {85115193-7767-4C55-8A02-8EA6AC987C8B}
 		{130182F6-4D18-4793-BE08-788283CBE1B2} = {85115193-7767-4C55-8A02-8EA6AC987C8B}
+		{29B3AAD0-F078-4D58-9BF1-B6DA2376A286} = {EFACA27B-7EBB-40FA-8DD6-CDA92545F7AA}
+		{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
+		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
+		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
+		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{492E3D48-880D-4A51-9543-364359E88CF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -333,5 +350,21 @@ Global
 		{130182F6-4D18-4793-BE08-788283CBE1B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{130182F6-4D18-4793-BE08-788283CBE1B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{130182F6-4D18-4793-BE08-788283CBE1B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7C5BCBA-B9B9-49C0-B2C6-5A5644271D17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
