@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.CoachMedia.Command;
@@ -10,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Common.ResponseModel;
 
 namespace WebAPI.Controllers;
 
@@ -23,10 +23,31 @@ public class CoachMediaController : ApiController
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CoachMediaDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMedia([FromQuery] Guid? coachId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CoachMediaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMedia(
+        [FromQuery] Guid? coachId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListCoachMediaQuery(coachId), cancellationToken);
+
+        var result = await _mediator.Send(new ListCoachMediaQuery(coachId, pageNumber, pageSize), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(PagedResult<CoachMediaDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllMedia(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new ListAllCoachMediaQuery(pageNumber, pageSize), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);
