@@ -57,6 +57,7 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/api/auth/swagger/v1/swagger.json", "Auth Service v1");
     c.SwaggerEndpoint("/api/coach/swagger/v1/swagger.json", "Coach Service v1");
+    c.SwaggerEndpoint("/api/payment/swagger/v1/swagger.json", "Payment Service v1");
     c.RoutePrefix = "docs";  
 });
 
