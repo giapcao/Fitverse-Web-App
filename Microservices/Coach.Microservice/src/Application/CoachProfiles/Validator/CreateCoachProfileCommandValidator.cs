@@ -11,6 +11,5 @@ public sealed class CreateCoachProfileCommandValidator : AbstractValidator<Creat
         RuleFor(x => x.YearsExperience).GreaterThanOrEqualTo(0).When(x => x.YearsExperience.HasValue);
         RuleFor(x => x.BasePriceVnd).GreaterThanOrEqualTo(0).When(x => x.BasePriceVnd.HasValue);
         RuleFor(x => x.ServiceRadiusKm).GreaterThan(0).When(x => x.ServiceRadiusKm.HasValue);
-        RuleFor(x => x.KycNote).MaximumLength(2000).When(x => x.KycNote is not null);
     }
 }

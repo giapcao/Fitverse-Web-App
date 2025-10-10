@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.CoachServices.Command;
@@ -10,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Common.ResponseModel;
 
 namespace WebAPI.Controllers;
 
@@ -23,10 +23,32 @@ public class CoachServicesController : ApiController
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CoachServiceDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetServices([FromQuery] Guid? coachId, [FromQuery] Guid? sportId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CoachServiceDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetServices(
+        [FromQuery] Guid? coachId,
+        [FromQuery] Guid? sportId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListCoachServicesQuery(coachId, sportId), cancellationToken);
+
+        var result = await _mediator.Send(new ListCoachServicesQuery(coachId, sportId, pageNumber, pageSize), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(PagedResult<CoachServiceDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllServices(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new ListAllCoachServicesQuery(pageNumber, pageSize), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);
