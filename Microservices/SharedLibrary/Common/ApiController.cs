@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using SharedLibrary.Common.ResponseModel;
 using MediatR;
@@ -37,6 +38,7 @@ namespace SharedLibrary.Common
                         )
                     ),
             };
+        
 
         private static ProblemDetails CreateProblemDetails(int status, Error error, Error[]? errors = null) =>
             new()
@@ -47,4 +49,4 @@ namespace SharedLibrary.Common
                 Extensions = { { nameof(errors), errors } }
             };
     }
-} 
+}
