@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.CoachProfiles.Command;
@@ -10,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Common.ResponseModel;
 
 namespace WebAPI.Controllers;
 
@@ -23,10 +23,13 @@ public class CoachProfilesController : ApiController
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CoachProfileDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetProfiles(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CoachProfileDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetProfiles(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListCoachProfilesQuery(), cancellationToken);
+        var result = await _mediator.Send(new ListCoachProfilesQuery(pageNumber, pageSize), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);

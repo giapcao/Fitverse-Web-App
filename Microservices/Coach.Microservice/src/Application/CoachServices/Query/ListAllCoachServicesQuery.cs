@@ -1,8 +1,7 @@
-using System;
 using Application.Abstractions.Messaging;
 using Application.Features;
 
 namespace Application.CoachServices.Query;
 
-public sealed record ListCoachServicesQuery(Guid? CoachId, Guid? SportId, int PageNumber = 1, int PageSize = 10)
+public sealed record ListAllCoachServicesQuery(int PageNumber = 1, int PageSize = 10)
     : PagedQuery<CoachServiceDto>(PageNumber, PageSize);

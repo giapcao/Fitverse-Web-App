@@ -30,8 +30,8 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
 
     public async Task<Result<KycRecordDto>> Handle(CreateKycRecordCommand request, CancellationToken cancellationToken)
     {
-        var profileExists = await _profileRepository.ExistsByUserIdAsync(request.CoachId, cancellationToken);
-        if (!profileExists)
+        var profile = await _profileRepository.GetDetailedByUserIdAsync(request.CoachId, cancellationToken);
+        if (profile is null)
         {
             return Result.Failure<KycRecordDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
@@ -44,6 +44,10 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
             Status = KycStatus.Pending,
             SubmittedAt = DateTime.UtcNow
         };
+
+        profile.KycStatus = record.Status;
+        profile.KycNote = record.AdminNote;
+        profile.UpdatedAt = DateTime.UtcNow;
 
         await _kycRepository.AddAsync(record, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

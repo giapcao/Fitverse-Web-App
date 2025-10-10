@@ -10,7 +10,7 @@ using SharedLibrary.Common.ResponseModel;
 
 namespace Application.CoachServices.Handler;
 
-public sealed class ListCoachServicesQueryHandler : IQueryHandler<ListCoachServicesQuery, IEnumerable<CoachServiceDto>>
+public sealed class ListCoachServicesQueryHandler : IQueryHandler<ListCoachServicesQuery, PagedResult<CoachServiceDto>>
 {
     private readonly ICoachServiceRepository _repository;
 
@@ -19,7 +19,7 @@ public sealed class ListCoachServicesQueryHandler : IQueryHandler<ListCoachServi
         _repository = repository;
     }
 
-    public async Task<Result<IEnumerable<CoachServiceDto>>> Handle(ListCoachServicesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<CoachServiceDto>>> Handle(ListCoachServicesQuery request, CancellationToken cancellationToken)
     {
         IEnumerable<Domain.Persistence.Models.CoachService> services;
         if (request.CoachId.HasValue)
@@ -37,6 +37,12 @@ public sealed class ListCoachServicesQueryHandler : IQueryHandler<ListCoachServi
         }
 
         var dto = services.Select(CoachServiceMapping.ToDto);
-        return Result.Success(dto);
+        var pagedResult = PagedResult<CoachServiceDto>.Create(dto, request.PageNumber, request.PageSize);
+        if (pagedResult.IsFailure)
+        {
+            return Result.Failure<PagedResult<CoachServiceDto>>(pagedResult.Error);
+        }
+
+        return Result.Success(pagedResult);
     }
 }

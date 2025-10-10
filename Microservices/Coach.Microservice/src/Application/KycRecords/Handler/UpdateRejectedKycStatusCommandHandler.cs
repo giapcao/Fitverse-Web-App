@@ -4,34 +4,35 @@ using Application.Abstractions.Messaging;
 using Application.Features;
 using Application.KycRecords.Command;
 using Domain.IRepositories;
+using Domain.Persistence.Enums;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.KycRecords.Handler;
 
-public sealed class UpdateKycRecordStatusCommandHandler : ICommandHandler<UpdateKycRecordStatusCommand, KycRecordDto>
+public sealed class UpdateRejectedKycStatusCommandHandler : ICommandHandler<UpdateRejectedKycStatusCommand, KycRecordDto>
 {
-    private readonly IKycRecordRepository _repository;
+    private readonly IKycRecordRepository _recordRepository;
     private readonly ICoachProfileRepository _profileRepository;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UpdateKycRecordStatusCommandHandler(
-        IKycRecordRepository repository,
+    public UpdateRejectedKycStatusCommandHandler(
+        IKycRecordRepository recordRepository,
         ICoachProfileRepository profileRepository,
         IUnitOfWork unitOfWork)
     {
-        _repository = repository;
+        _recordRepository = recordRepository;
         _profileRepository = profileRepository;
         _unitOfWork = unitOfWork;
     }
 
-    public Task<Result<KycRecordDto>> Handle(UpdateKycRecordStatusCommand request, CancellationToken cancellationToken) =>
+    public Task<Result<KycRecordDto>> Handle(UpdateRejectedKycStatusCommand request, CancellationToken cancellationToken) =>
         KycRecordStatusUpdater.UpdateAsync(
-            _repository,
+            _recordRepository,
             _profileRepository,
             _unitOfWork,
             request.RecordId,
-            request.Status,
+            KycStatus.Rejected,
             request.AdminNote,
             request.ReviewerId,
             cancellationToken);

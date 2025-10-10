@@ -1,8 +1,7 @@
-using System;
 using Application.Abstractions.Messaging;
 using Application.Features;
 
 namespace Application.CoachCertifications.Query;
 
-public sealed record ListCoachCertificationsQuery(Guid? CoachId, int PageNumber = 1, int PageSize = 10)
+public sealed record ListAllCoachCertificationsQuery(int PageNumber = 1, int PageSize = 10)
     : PagedQuery<CoachCertificationDto>(PageNumber, PageSize);
