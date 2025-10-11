@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,27 +9,20 @@ using SharedLibrary.Common.ResponseModel;
 
 namespace Application.CoachCertifications.Handler;
 
-public sealed class ListCoachCertificationsQueryHandler : IQueryHandler<ListCoachCertificationsQuery, PagedResult<CoachCertificationDto>>
+public sealed class ListAllCoachCertificationsQueryHandler : IQueryHandler<ListAllCoachCertificationsQuery, PagedResult<CoachCertificationDto>>
 {
     private readonly ICoachCertificationRepository _repository;
 
-    public ListCoachCertificationsQueryHandler(ICoachCertificationRepository repository)
+    public ListAllCoachCertificationsQueryHandler(ICoachCertificationRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<Result<PagedResult<CoachCertificationDto>>> Handle(ListCoachCertificationsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<CoachCertificationDto>>> Handle(
+        ListAllCoachCertificationsQuery request,
+        CancellationToken cancellationToken)
     {
-        IEnumerable<Domain.Persistence.Models.CoachCertification> certifications;
-        if (request.CoachId.HasValue)
-        {
-            certifications = await _repository.GetByCoachIdAsync(request.CoachId.Value, cancellationToken);
-        }
-        else
-        {
-            certifications = await _repository.GetAllAsync(cancellationToken);
-        }
-
+        var certifications = await _repository.GetAllAsync(cancellationToken);
         var dto = certifications.Select(CoachCertificationMapping.ToDto);
         var pagedResult = PagedResult<CoachCertificationDto>.Create(dto, request.PageNumber, request.PageSize);
         if (pagedResult.IsFailure)

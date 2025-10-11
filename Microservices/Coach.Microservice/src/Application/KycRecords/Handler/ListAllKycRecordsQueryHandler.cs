@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,27 +9,20 @@ using SharedLibrary.Common.ResponseModel;
 
 namespace Application.KycRecords.Handler;
 
-public sealed class ListKycRecordsQueryHandler : IQueryHandler<ListKycRecordsQuery, PagedResult<KycRecordDto>>
+public sealed class ListAllKycRecordsQueryHandler : IQueryHandler<ListAllKycRecordsQuery, PagedResult<KycRecordDto>>
 {
     private readonly IKycRecordRepository _repository;
 
-    public ListKycRecordsQueryHandler(IKycRecordRepository repository)
+    public ListAllKycRecordsQueryHandler(IKycRecordRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task<Result<PagedResult<KycRecordDto>>> Handle(ListKycRecordsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResult<KycRecordDto>>> Handle(
+        ListAllKycRecordsQuery request,
+        CancellationToken cancellationToken)
     {
-        IEnumerable<Domain.Persistence.Models.KycRecord> records;
-        if (request.CoachId.HasValue)
-        {
-            records = await _repository.GetByCoachIdAsync(request.CoachId.Value, cancellationToken);
-        }
-        else
-        {
-            records = await _repository.GetAllAsync(cancellationToken);
-        }
-
+        var records = await _repository.GetAllAsync(cancellationToken);
         var dto = records.Select(KycRecordMapping.ToDto);
         var pagedResult = PagedResult<KycRecordDto>.Create(dto, request.PageNumber, request.PageSize);
         if (pagedResult.IsFailure)
