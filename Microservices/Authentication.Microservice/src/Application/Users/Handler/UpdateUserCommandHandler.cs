@@ -1,14 +1,11 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.Features;
 using Application.Users.Command;
-using Domain.Entities;
 using Domain.IRepositories;
 using SharedLibrary.Common;
-using Microsoft.AspNetCore.Identity;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Users.Handler;
@@ -16,17 +13,10 @@ namespace Application.Users.Handler;
 public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand, UserDto>
 {
     private readonly IAuthenticationRepository _userRepository;
-    private readonly IRepository<Role> _roleRepository;
-    private readonly IPasswordHasher<AppUser> _passwordHasher;
 
-    public UpdateUserCommandHandler(
-        IAuthenticationRepository userRepository,
-        IRepository<Role> roleRepository,
-        IPasswordHasher<AppUser> passwordHasher)
+    public UpdateUserCommandHandler(IAuthenticationRepository userRepository)
     {
         _userRepository = userRepository;
-        _roleRepository = roleRepository;
-        _passwordHasher = passwordHasher;
     }
 
     public async Task<Result<UserDto>> Handle(UpdateUserCommand request, CancellationToken ct)
@@ -57,43 +47,39 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
             user.FullName = request.FullName.Trim();
         }
 
-        user.Phone = request.Phone ?? user.Phone;
-        user.AvatarUrl = request.AvatarUrl ?? user.AvatarUrl;
-        user.Gender = request.Gender ?? user.Gender;
-        user.Birth = request.Birth ?? user.Birth;
-        user.Description = request.Description ?? user.Description;
-        user.HomeLat = request.HomeLat ?? user.HomeLat;
-        user.HomeLng = request.HomeLng ?? user.HomeLng;
-
-        if (request.IsActive.HasValue)
+        if (request.Phone is not null)
         {
-            user.IsActive = request.IsActive.Value;
+            user.Phone = request.Phone;
         }
 
-        if (request.EmailConfirmed.HasValue)
+        if (request.AvatarUrl is not null)
         {
-            user.EmailConfirmed = request.EmailConfirmed.Value;
+            user.AvatarUrl = request.AvatarUrl;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.Password))
+        if (request.Gender is not null)
         {
-            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
-            user.SecurityStamp = Guid.NewGuid().ToString();
+            user.Gender = request.Gender;
         }
 
-        if (request.RoleIds is not null)
+        if (request.Birth.HasValue)
         {
-            var distinctRoleIds = request.RoleIds.Where(id => id != Guid.Empty).Distinct().ToArray();
-            user.Roles.Clear();
+            user.Birth = request.Birth.Value;
+        }
 
-            if (distinctRoleIds.Length > 0)
-            {
-                var roles = await _roleRepository.FindAsync(r => distinctRoleIds.Contains(r.Id), ct);
-                foreach (var role in roles)
-                {
-                    user.Roles.Add(role);
-                }
-            }
+        if (request.Description is not null)
+        {
+            user.Description = request.Description;
+        }
+
+        if (request.HomeLat.HasValue)
+        {
+            user.HomeLat = request.HomeLat.Value;
+        }
+
+        if (request.HomeLng.HasValue)
+        {
+            user.HomeLng = request.HomeLng.Value;
         }
 
         user.UpdatedAt = DateTime.UtcNow;

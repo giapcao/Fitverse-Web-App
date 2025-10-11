@@ -7,8 +7,6 @@ public partial class Payment
 {
     public Guid Id { get; set; }
 
-    public Guid BookingId { get; set; }
-
     public long AmountVnd { get; set; }
 
     public string? GatewayTxnId { get; set; }
