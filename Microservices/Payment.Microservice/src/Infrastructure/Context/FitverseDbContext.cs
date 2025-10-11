@@ -48,13 +48,10 @@ public partial class FitverseDbContext : DbContext
 
             entity.ToTable("payment");
 
-            entity.HasIndex(e => e.BookingId, "idx_payment_booking");
-
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.AmountVnd).HasColumnName("amount_vnd");
-            entity.Property(e => e.BookingId).HasColumnName("booking_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");

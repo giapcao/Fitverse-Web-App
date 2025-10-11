@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using Application;
 using Asp.Versioning;
@@ -11,6 +12,8 @@ using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
 using SharedLibrary.Utils;
+using WebApi.Constants;
+using WebApi.Options;
 
 string solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? "";
 if (solutionDirectory != null)
@@ -39,12 +42,41 @@ builder.Services
 
 
 builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyNames.VNPay, policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Payment", Version = "v1" });
+    c.SwaggerDoc("vnpay", new OpenApiInfo { Title = "VNPay", Version = "v1" });
+
+    c.DocInclusionPredicate((docName, apiDesc) =>
+    {
+        var groupName = apiDesc.GroupName;
+
+        if (docName.Equals("vnpay", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Equals(groupName, "vnpay", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (docName.Equals("v1", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.IsNullOrEmpty(groupName) ||
+                   string.Equals(groupName, docName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    });
 
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -90,6 +122,7 @@ builder.Services.AddSingleton(sp =>
 
     return dataSourceBuilder.Build();
 });
+builder.Services.Configure<VNPayOptions>(builder.Configuration.GetSection(VNPayOptions.SectionName));
 builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()
@@ -109,6 +142,7 @@ if (app.Environment.IsDevelopment())
             c.SwaggerEndpoint($"/swagger/{desc.GroupName}/swagger.json",
                 $"Payment API {desc.GroupName.ToUpperInvariant()}");
         }
+        c.SwaggerEndpoint("/swagger/vnpay/swagger.json", "VNPay API");
 
         c.RoutePrefix = "swagger";
     });
@@ -126,6 +160,8 @@ app.UseSwagger();
 app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
