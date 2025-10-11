@@ -39,7 +39,6 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
             YearsExperience = request.YearsExperience,
             BasePriceVnd = request.BasePriceVnd,
             ServiceRadiusKm = request.ServiceRadiusKm,
-            KycNote = request.KycNote,
             KycStatus = KycStatus.Pending,
             RatingAvg = 0m,
             RatingCount = 0,

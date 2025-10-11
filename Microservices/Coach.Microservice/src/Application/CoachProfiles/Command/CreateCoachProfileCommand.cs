@@ -10,5 +10,4 @@ public sealed record CreateCoachProfileCommand(
     int? YearsExperience,
     long? BasePriceVnd,
     decimal? ServiceRadiusKm,
-    string? KycNote,
     bool IsPublic) : ICommand<CoachProfileDto>;

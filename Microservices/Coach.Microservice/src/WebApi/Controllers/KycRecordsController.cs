@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Features;
@@ -10,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Common.ResponseModel;
 
 namespace WebAPI.Controllers;
 
@@ -23,10 +23,31 @@ public class KycRecordsController : ApiController
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<KycRecordDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetRecords([FromQuery] Guid? coachId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<KycRecordDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRecords(
+        [FromQuery] Guid? coachId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListKycRecordsQuery(coachId), cancellationToken);
+
+        var result = await _mediator.Send(new ListKycRecordsQuery(coachId, pageNumber, pageSize), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(PagedResult<KycRecordDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllRecords(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new ListAllKycRecordsQuery(pageNumber, pageSize), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);
@@ -83,6 +104,38 @@ public class KycRecordsController : ApiController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStatus(Guid recordId, [FromBody] UpdateKycRecordStatusCommand command, CancellationToken cancellationToken)
+    {
+        var merged = command with { RecordId = recordId };
+        var result = await _mediator.Send(merged, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{recordId:guid}/approve")]
+    [ProducesResponseType(typeof(KycRecordDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Approve(Guid recordId, [FromBody] UpdateApproveKycStatusCommand command, CancellationToken cancellationToken)
+    {
+        var merged = command with { RecordId = recordId };
+        var result = await _mediator.Send(merged, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{recordId:guid}/reject")]
+    [ProducesResponseType(typeof(KycRecordDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Reject(Guid recordId, [FromBody] UpdateRejectedKycStatusCommand command, CancellationToken cancellationToken)
     {
         var merged = command with { RecordId = recordId };
         var result = await _mediator.Send(merged, cancellationToken);

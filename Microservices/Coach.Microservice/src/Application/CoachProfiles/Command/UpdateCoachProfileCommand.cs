@@ -11,6 +11,5 @@ public sealed record UpdateCoachProfileCommand(
     int? YearsExperience,
     long? BasePriceVnd,
     decimal? ServiceRadiusKm,
-    string? KycNote,
     bool? IsPublic,
     KycStatus? KycStatus) : ICommand<CoachProfileDto>;

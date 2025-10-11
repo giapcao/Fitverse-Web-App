@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.CoachCertifications.Command;
@@ -11,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using SharedLibrary.Common.ResponseModel;
 
 namespace WebAPI.Controllers;
 
@@ -25,10 +25,30 @@ public class CoachCertificationsController : ApiController
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<CoachCertificationDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCertifications([FromQuery] Guid? coachId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CoachCertificationDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCertifications(
+        [FromQuery] Guid? coachId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListCoachCertificationsQuery(coachId), cancellationToken);
+        var result = await _mediator.Send(new ListCoachCertificationsQuery(coachId, pageNumber, pageSize), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("all")]
+    [ProducesResponseType(typeof(PagedResult<CoachCertificationDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllCertifications(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new ListAllCoachCertificationsQuery(pageNumber, pageSize), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);

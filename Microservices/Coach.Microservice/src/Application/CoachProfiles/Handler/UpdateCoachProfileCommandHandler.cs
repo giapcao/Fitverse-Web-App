@@ -33,8 +33,6 @@ public sealed class UpdateCoachProfileCommandHandler : ICommandHandler<UpdateCoa
         profile.YearsExperience = request.YearsExperience ?? profile.YearsExperience;
         profile.BasePriceVnd = request.BasePriceVnd ?? profile.BasePriceVnd;
         profile.ServiceRadiusKm = request.ServiceRadiusKm ?? profile.ServiceRadiusKm;
-        profile.KycNote = request.KycNote ?? profile.KycNote;
-
         if (request.IsPublic.HasValue)
         {
             profile.IsPublic = request.IsPublic.Value;
