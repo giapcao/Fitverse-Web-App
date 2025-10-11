@@ -1,0 +1,96 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Application.Wallets.Commands;
+using Application.Wallets.Queries;
+using Asp.Versioning;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using SharedLibrary.Common;
+
+namespace WebApi.Controllers;
+
+[Authorize]
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/[controller]/v{version:apiVersion}")]
+public class WalletsController : ApiController
+{
+    public WalletsController(IMediator mediator) : base(mediator)
+    {
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(WalletResponse[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWallets(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletsQuery(), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(WalletResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWalletById(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletByIdQuery(id), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(WalletResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateWallet([FromBody] CreateWalletCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
+        return CreatedAtAction(nameof(GetWalletById), new { id = result.Value.Id, version }, result.Value);
+    }
+
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(WalletResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateWallet(Guid id, [FromBody] UpdateWalletCommand command, CancellationToken cancellationToken)
+    {
+        var merged = command with { Id = id };
+        var result = await _mediator.Send(merged, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteWallet(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new DeleteWalletCommand(id), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return NoContent();
+    }
+}
