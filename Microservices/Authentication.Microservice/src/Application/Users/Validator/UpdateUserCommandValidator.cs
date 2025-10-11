@@ -17,14 +17,74 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
                 .EmailAddress();
         });
 
-        When(x => !string.IsNullOrWhiteSpace(x.Password), () =>
+        RuleFor(x => x)
+            .Must(HasAnyUpdatableField)
+            .WithMessage("At least one field must be provided for update.");
+
+        When(x => !string.IsNullOrWhiteSpace(x.FullName), () =>
         {
-            RuleFor(x => x.Password!)
-                .MinimumLength(8);
+            RuleFor(x => x.FullName!)
+                .MaximumLength(255);
         });
 
-        RuleForEach(x => x.RoleIds ?? Array.Empty<Guid>())
-            .Must(id => id != Guid.Empty)
-            .WithMessage("Role id cannot be empty when provided.");
+        When(x => x.Phone is not null, () =>
+        {
+            RuleFor(x => x.Phone!)
+                .NotEmpty()
+                .MaximumLength(32);
+        });
+
+        When(x => x.AvatarUrl is not null, () =>
+        {
+            RuleFor(x => x.AvatarUrl!)
+                .Must(IsValidAbsoluteUri)
+                .WithMessage("AvatarUrl must be a valid absolute URI.");
+        });
+
+        When(x => x.Gender is not null, () =>
+        {
+            RuleFor(x => x.Gender!)
+                .NotEmpty()
+                .MaximumLength(32);
+        });
+
+        When(x => x.Birth.HasValue, () =>
+        {
+            RuleFor(x => x.Birth!.Value)
+                .LessThanOrEqualTo(_ => DateOnly.FromDateTime(DateTime.UtcNow))
+                .WithMessage("Birth date cannot be in the future.");
+        });
+
+        When(x => x.Description is not null, () =>
+        {
+            RuleFor(x => x.Description!)
+                .MaximumLength(1024);
+        });
+
+        When(x => x.HomeLat.HasValue, () =>
+        {
+            RuleFor(x => x.HomeLat!.Value)
+                .InclusiveBetween(-90, 90);
+        });
+
+        When(x => x.HomeLng.HasValue, () =>
+        {
+            RuleFor(x => x.HomeLng!.Value)
+                .InclusiveBetween(-180, 180);
+        });
     }
+
+    private static bool HasAnyUpdatableField(UpdateUserCommand command) =>
+        !string.IsNullOrWhiteSpace(command.Email)
+        || !string.IsNullOrWhiteSpace(command.FullName)
+        || command.Phone is not null
+        || command.AvatarUrl is not null
+        || command.Gender is not null
+        || command.Birth.HasValue
+        || command.Description is not null
+        || command.HomeLat.HasValue
+        || command.HomeLng.HasValue;
+
+    private static bool IsValidAbsoluteUri(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out _);
 }

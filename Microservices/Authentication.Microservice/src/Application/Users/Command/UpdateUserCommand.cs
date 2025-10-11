@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Application.Abstractions.Messaging;
 using Application.Features;
 
@@ -15,9 +14,5 @@ public sealed record UpdateUserCommand(
     DateOnly? Birth,
     string? Description,
     double? HomeLat,
-    double? HomeLng,
-    bool? IsActive,
-    bool? EmailConfirmed,
-    string? Password,
-    IEnumerable<Guid>? RoleIds) : ICommand<UserDto>;
-
+    double? HomeLng
+    ) : ICommand<UserDto>;
