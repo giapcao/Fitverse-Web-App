@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Features;
 using Application.Roles.Command;
-using Domain.Enums;
 using Asp.Versioning;
+using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,7 +14,7 @@ using SharedLibrary.Common;
 
 namespace WebApi.Controllers;
 
-[Authorize(Policy = "IsAdmin")]
+[Authorize]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/[controller]/v{version:apiVersion}")]
@@ -23,7 +23,7 @@ public class RolesController : ApiController
     public RolesController(IMediator mediator) : base(mediator)
     {
     }
-
+    [Authorize(Policy = "IsAdmin")]
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<RoleDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(CancellationToken ct)
@@ -51,6 +51,7 @@ public class RolesController : ApiController
         return Ok(result.Value);
     }
 
+    [Authorize(Policy = "IsAdmin")]
     [HttpPost]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -66,6 +67,7 @@ public class RolesController : ApiController
         return CreatedAtAction(nameof(GetRoleById), new { id = result.Value.Id, version }, result.Value);
     }
 
+    [Authorize(Policy = "IsAdmin")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(RoleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -81,7 +83,7 @@ public class RolesController : ApiController
 
         return Ok(result.Value);
     }
-
+    
     [HttpPost("users/{userId:guid}/customer")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -110,6 +112,7 @@ public class RolesController : ApiController
     public Task<IActionResult> AddSupportRole(Guid userId, CancellationToken ct) =>
         AssignRoleToUser(userId, RoleType.Support, ct);
 
+    [Authorize(Policy = "IsAdmin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -123,7 +126,7 @@ public class RolesController : ApiController
 
         return NoContent();
     }
-
+    
     private async Task<IActionResult> AssignRoleToUser(Guid userId, RoleType role, CancellationToken ct)
     {
         var result = await _mediator.Send(new AssignRoleToUserCommand(userId, role), ct);
@@ -135,3 +138,4 @@ public class RolesController : ApiController
         return Ok(result.Value);
     }
 }
+
