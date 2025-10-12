@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Application.Features;
 using Application.Roles.Command;
 using Asp.Versioning;
+using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -82,6 +83,34 @@ public class RolesController : ApiController
 
         return Ok(result.Value);
     }
+    
+    [HttpPost("users/{userId:guid}/customer")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> AddCustomerRole(Guid userId, CancellationToken ct) =>
+        AssignRoleToUser(userId, RoleType.Customer, ct);
+
+    [HttpPost("users/{userId:guid}/coach")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> AddCoachRole(Guid userId, CancellationToken ct) =>
+        AssignRoleToUser(userId, RoleType.Coach, ct);
+
+    [HttpPost("users/{userId:guid}/admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> AddAdminRole(Guid userId, CancellationToken ct) =>
+        AssignRoleToUser(userId, RoleType.Admin, ct);
+
+    [HttpPost("users/{userId:guid}/support")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IActionResult> AddSupportRole(Guid userId, CancellationToken ct) =>
+        AssignRoleToUser(userId, RoleType.Support, ct);
 
     [Authorize(Policy = "IsAdmin")]
     [HttpDelete("{id:guid}")]
@@ -96,6 +125,17 @@ public class RolesController : ApiController
         }
 
         return NoContent();
+    }
+    
+    private async Task<IActionResult> AssignRoleToUser(Guid userId, RoleType role, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new AssignRoleToUserCommand(userId, role), ct);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
     }
 }
 
