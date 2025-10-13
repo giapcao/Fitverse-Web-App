@@ -11,11 +11,9 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
         RuleFor(x => x.Id)
             .NotEmpty();
 
-        When(x => !string.IsNullOrWhiteSpace(x.Email), () =>
-        {
-            RuleFor(x => x.Email!)
-                .EmailAddress();
-        });
+        RuleFor(x => x.Email!)
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x)
             .Must(HasAnyUpdatableField)
@@ -27,21 +25,21 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
                 .MaximumLength(255);
         });
 
-        When(x => x.Phone is not null, () =>
+        When(x => !string.IsNullOrWhiteSpace(x.Phone), () =>
         {
             RuleFor(x => x.Phone!)
                 .NotEmpty()
                 .MaximumLength(32);
         });
 
-        When(x => x.AvatarUrl is not null, () =>
+        When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl), () =>
         {
             RuleFor(x => x.AvatarUrl!)
                 .Must(IsValidAbsoluteUri)
                 .WithMessage("AvatarUrl must be a valid absolute URI.");
         });
 
-        When(x => x.Gender is not null, () =>
+        When(x => !string.IsNullOrWhiteSpace(x.Gender), () =>
         {
             RuleFor(x => x.Gender!)
                 .NotEmpty()
@@ -77,9 +75,9 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
     private static bool HasAnyUpdatableField(UpdateUserCommand command) =>
         !string.IsNullOrWhiteSpace(command.Email)
         || !string.IsNullOrWhiteSpace(command.FullName)
-        || command.Phone is not null
-        || command.AvatarUrl is not null
-        || command.Gender is not null
+        || !string.IsNullOrWhiteSpace(command.Phone)
+        || !string.IsNullOrWhiteSpace(command.AvatarUrl)
+        || !string.IsNullOrWhiteSpace(command.Gender)
         || command.Birth.HasValue
         || command.Description is not null
         || command.HomeLat.HasValue
