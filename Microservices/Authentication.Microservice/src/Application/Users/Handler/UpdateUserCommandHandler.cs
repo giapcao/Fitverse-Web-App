@@ -47,19 +47,19 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
             user.FullName = request.FullName.Trim();
         }
 
-        if (request.Phone is not null)
+        if (!string.IsNullOrWhiteSpace(request.Phone))
         {
-            user.Phone = request.Phone;
+            user.Phone = request.Phone.Trim();
         }
 
-        if (request.AvatarUrl is not null)
+        if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
         {
-            user.AvatarUrl = request.AvatarUrl;
+            user.AvatarUrl = request.AvatarUrl.Trim();
         }
 
-        if (request.Gender is not null)
+        if (!string.IsNullOrWhiteSpace(request.Gender))
         {
-            user.Gender = request.Gender;
+            user.Gender = request.Gender.Trim();
         }
 
         if (request.Birth.HasValue)
@@ -69,7 +69,7 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
 
         if (request.Description is not null)
         {
-            user.Description = request.Description;
+            user.Description = request.Description.Trim();
         }
 
         if (request.HomeLat.HasValue)
