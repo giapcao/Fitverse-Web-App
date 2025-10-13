@@ -1,3 +1,5 @@
+using Amazon.S3;
+using Application.Common.Services;
 using Domain.IRepositories;
 using Infrastructure.Common;
 using Infrastructure.Repositories;
@@ -5,6 +7,7 @@ using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
 using SharedLibrary.Utils;
@@ -24,6 +27,12 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<EnvironmentConfig>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AwsS3Config>>();
+            return S3FileStorageService.CreateS3Client(options.Value);
+        });
+        services.AddSingleton<IFileStorageService, S3FileStorageService>();
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             using var serviceProvider = services.BuildServiceProvider();
             var logger = serviceProvider.GetRequiredService<ILogger<AutoScaffold>>();

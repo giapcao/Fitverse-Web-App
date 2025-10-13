@@ -29,5 +29,28 @@ namespace SharedLibrary.Configs
         public string RedisHost => Environment.GetEnvironmentVariable("REDIS_HOST") ?? "redis";
         public string RedisPassword => Environment.GetEnvironmentVariable("REDIS_PASSWORD") ?? "default";
         public int RedisPort => int.TryParse(Environment.GetEnvironmentVariable("REDIS_PORT"), out var port) ? port : 6379;
+
+        //AWS S3 Configuration
+        public string AwsS3AccessKey => GetEnvironmentValue("AwsS3__AccessKey", "AWS_S3_ACCESS_KEY") ?? string.Empty;
+        public string AwsS3SecretKey => GetEnvironmentValue("AwsS3__SecretKey", "AWS_S3_SECRET_KEY") ?? string.Empty;
+        public string AwsS3BucketName => GetEnvironmentValue("AwsS3__BucketName", "AWS_S3_BUCKET_NAME") ?? "fitverse-files";
+        public string AwsS3Region => GetEnvironmentValue("AwsS3__Region", "AWS_S3_REGION") ?? "ap-southeast-1";
+        public string? AwsS3ServiceUrl => GetEnvironmentValue("AwsS3__ServiceUrl", "AWS_S3_SERVICE_URL");
+        public bool AwsS3UseForcePathStyle =>
+            !bool.TryParse(GetEnvironmentValue("AwsS3__UseForcePathStyle", "AWS_S3_USE_FORCE_PATH_STYLE"), out var value) || value;
+
+        private static string? GetEnvironmentValue(params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                var value = Environment.GetEnvironmentVariable(key);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
     }
 } 

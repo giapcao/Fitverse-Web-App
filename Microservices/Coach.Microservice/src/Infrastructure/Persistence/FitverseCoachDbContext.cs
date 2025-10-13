@@ -1,10 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Domain.Persistence;
+namespace Infrastructure.Persistence;
 
 public partial class FitverseCoachDbContext : DbContext
 {
@@ -29,11 +28,15 @@ public partial class FitverseCoachDbContext : DbContext
 
     public virtual DbSet<Sport> Sports { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Name=BookingDb");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .HasPostgresEnum<KycStatus>("public", "kyc_status_enum")
-            .HasPostgresEnum<CoachMediaType>("public", "media_type_enum")
+            .HasPostgresEnum("kyc_status_enum", new[] { "pending", "approved", "rejected" })
+            .HasPostgresEnum("media_type_enum", new[] { "image", "video", "document" })
             .HasPostgresExtension("citext")
             .HasPostgresExtension("pgcrypto");
 
@@ -86,9 +89,6 @@ public partial class FitverseCoachDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("is_featured");
             entity.Property(e => e.MediaName).HasColumnName("media_name");
-            entity.Property(e => e.MediaType)
-                .HasColumnType("media_type_enum")
-                .HasColumnName("media_type");
             entity.Property(e => e.Status)
                 .HasDefaultValue(false)
                 .HasColumnName("status");
@@ -263,9 +263,6 @@ public partial class FitverseCoachDbContext : DbContext
             entity.Property(e => e.AdminNote).HasColumnName("admin_note");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
             entity.Property(e => e.IdDocumentUrl).HasColumnName("id_document_url");
-            entity.Property(e => e.Status)
-                .HasColumnType("kyc_status_enum")
-                .HasColumnName("status");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
             entity.Property(e => e.ReviewerId).HasColumnName("reviewer_id");
             entity.Property(e => e.SubmittedAt)
