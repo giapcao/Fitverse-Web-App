@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Application.CoachProfiles.Command;
 using Application.CoachProfiles.Query;
 using Application.Features;
+using Application.KycRecords.Command;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Http;
@@ -57,14 +58,24 @@ public class CoachProfilesController : ApiController
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateProfile([FromBody] CreateCoachProfileCommand command, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command, cancellationToken);
-        if (result.IsFailure)
+        var profileResult = await _mediator.Send(command, cancellationToken);
+        if (profileResult.IsFailure)
         {
-            return HandleFailure(result);
+            return HandleFailure(profileResult);
+        }
+
+        var profile = profileResult.Value;
+
+        var kycResult = await _mediator.Send(
+            new CreateKycRecordCommand(profile.CoachId, null, "kyc_coach_profile"),
+            cancellationToken);
+        if (kycResult.IsFailure)
+        {
+            return HandleFailure(kycResult);
         }
 
         var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
-        return CreatedAtAction(nameof(GetProfileById), new { coachId = result.Value.CoachId, version }, result.Value);
+        return CreatedAtAction(nameof(GetProfileById), new { coachId = profile.CoachId, version }, profile);
     }
 
     [HttpPut("{coachId:guid}")]

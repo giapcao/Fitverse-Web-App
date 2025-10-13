@@ -86,6 +86,7 @@ public partial class FitverseCoachDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("is_featured");
             entity.Property(e => e.MediaName).HasColumnName("media_name");
+            entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.MediaType)
                 .HasColumnType("media_type_enum")
                 .HasColumnName("media_type");
@@ -155,6 +156,9 @@ public partial class FitverseCoachDbContext : DbContext
             entity.Property(e => e.IsPublic)
                 .HasDefaultValue(false)
                 .HasColumnName("is_public");
+            entity.Property(e => e.KycStatus)
+                .HasColumnType("kyc_status_enum")
+                .HasColumnName("kyc_status");
             entity.Property(e => e.KycNote).HasColumnName("kyc_note");
             entity.Property(e => e.OperatingLocation)
                 .HasComment("Khu vực/Nơi hoạt động chính")
