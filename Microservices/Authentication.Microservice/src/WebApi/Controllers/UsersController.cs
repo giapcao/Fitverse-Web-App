@@ -22,7 +22,8 @@ public class UsersController : ApiController
     public UsersController(IMediator mediator) : base(mediator)
     {
     }
-
+    
+    [Authorize (Policy = "IsAdmin")]
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsers(CancellationToken ct)
