@@ -29,10 +29,21 @@ public sealed class UpdateCoachProfileCommandHandler : ICommandHandler<UpdateCoa
             return Result.Failure<CoachProfileDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
+        profile.Fullname = request.Fullname ?? profile.Fullname;
         profile.Bio = request.Bio ?? profile.Bio;
         profile.YearsExperience = request.YearsExperience ?? profile.YearsExperience;
         profile.BasePriceVnd = request.BasePriceVnd ?? profile.BasePriceVnd;
         profile.ServiceRadiusKm = request.ServiceRadiusKm ?? profile.ServiceRadiusKm;
+        profile.AvatarUrl = request.AvatarUrl ?? profile.AvatarUrl;
+        profile.BirthDate = request.BirthDate ?? profile.BirthDate;
+        profile.WeightKg = request.WeightKg ?? profile.WeightKg;
+        profile.HeightCm = request.HeightCm ?? profile.HeightCm;
+        profile.Gender = request.Gender ?? profile.Gender;
+        profile.OperatingLocation = request.OperatingLocation ?? profile.OperatingLocation;
+        profile.TaxCode = request.TaxCode ?? profile.TaxCode;
+        profile.CitizenId = request.CitizenId ?? profile.CitizenId;
+        profile.CitizenIssueDate = request.CitizenIssueDate ?? profile.CitizenIssueDate;
+        profile.CitizenIssuePlace = request.CitizenIssuePlace ?? profile.CitizenIssuePlace;
         if (request.IsPublic.HasValue)
         {
             profile.IsPublic = request.IsPublic.Value;

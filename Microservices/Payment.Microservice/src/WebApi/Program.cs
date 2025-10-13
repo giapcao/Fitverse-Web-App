@@ -107,6 +107,7 @@ builder.Services.AddSwaggerGen(c =>
 
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
+builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
 builder.Services.AddSingleton(sp =>
 {
     var databaseConfig = sp.GetRequiredService<IOptions<DatabaseConfig>>().Value;

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.CoachCertifications.Command;
 using Application.Features;
+using Application.Common.Services;
 using Domain.IRepositories;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
@@ -16,15 +17,18 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
     private readonly ICoachCertificationRepository _certificationRepository;
     private readonly ICoachProfileRepository _profileRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
 
     public CreateCoachCertificationCommandHandler(
         ICoachCertificationRepository certificationRepository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IFileStorageService fileStorageService)
     {
         _certificationRepository = certificationRepository;
         _profileRepository = profileRepository;
         _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<CoachCertificationDto>> Handle(CreateCoachCertificationCommand request, CancellationToken cancellationToken)
@@ -35,6 +39,21 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
             return Result.Failure<CoachCertificationDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
+        var fileUrl = request.FileUrl;
+        if (request.File is not null)
+        {
+            var directory = request.File.Directory ?? request.Directory ?? "certifications";
+            var uploadResult = await _fileStorageService.UploadAsync(
+                new FileUploadRequest(
+                    request.CoachId,
+                    request.File.Content,
+                    request.File.FileName,
+                    request.File.ContentType,
+                    directory),
+                cancellationToken);
+            fileUrl = uploadResult.Url;
+        }
+
         var utcNow = DateTime.UtcNow;
         var certification = new CoachCertification
         {
@@ -43,7 +62,7 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
             Issuer = request.Issuer,
             IssuedOn = request.IssuedOn,
             ExpiresOn = request.ExpiresOn,
-            FileUrl = request.FileUrl,
+            FileUrl = fileUrl,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "pending" : request.Status,
             ReviewedBy = null,
             ReviewedAt = null,

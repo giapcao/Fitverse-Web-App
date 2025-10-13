@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.CoachCertifications.Command;
@@ -9,17 +10,20 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using WebAPI.Contracts.Requests;
 
 namespace WebAPI.Controllers;
 
-[Authorize(Policy = "IsAdmin")]
+// [Authorize(Policy = "IsAdmin")]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/[controller]/v{version:apiVersion}")]
 public class CoachCertificationsController : ApiController
 {
+
     public CoachCertificationsController(IMediator mediator) : base(mediator)
     {
     }
@@ -74,8 +78,31 @@ public class CoachCertificationsController : ApiController
     [HttpPost]
     [ProducesResponseType(typeof(CoachCertificationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateCertification([FromBody] CreateCoachCertificationCommand command, CancellationToken cancellationToken)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> CreateCertification([FromForm] CreateCoachCertificationRequest request, CancellationToken cancellationToken)
     {
+        CoachCertificationFile? file = null;
+        if (request.File is not null && request.File.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream, cancellationToken);
+            var directory = string.IsNullOrWhiteSpace(request.Directory) ? "certifications" : request.Directory;
+            file = new CoachCertificationFile(
+                memoryStream.ToArray(),
+                request.File.FileName,
+                request.File.ContentType,
+                directory);
+        }
+        var command = new CreateCoachCertificationCommand(
+            request.CoachId,
+            request.CertName,
+            request.Issuer,
+            request.IssuedOn,
+            request.ExpiresOn,
+            request.FileUrl,
+            request.Status ?? string.Empty,
+            request.Directory,
+            file);
         var result = await _mediator.Send(command, cancellationToken);
         if (result.IsFailure)
         {

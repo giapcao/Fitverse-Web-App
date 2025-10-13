@@ -12,14 +12,27 @@ internal static class CoachProfileMapping
         var media = profile.CoachMedia?.Select(CoachMediaMapping.ToDto).ToArray() ?? Array.Empty<CoachMediaDto>();
         var services = profile.CoachServices?.Select(CoachServiceMapping.ToDto).ToArray() ?? Array.Empty<CoachServiceDto>();
         var kycRecords = profile.KycRecords?.Select(KycRecordMapping.ToDto).ToArray() ?? Array.Empty<KycRecordDto>();
-        var sportIds = profile.Sports?.Select(s => s.Id).ToArray() ?? Array.Empty<Guid>();
+        var sports = profile.Sports?
+            .Select(s => new CoachProfileSportDto(s.Id, s.DisplayName))
+            .ToArray() ?? Array.Empty<CoachProfileSportDto>();
 
         return new CoachProfileDto(
             profile.UserId,
+            profile.Fullname,
             profile.Bio,
             profile.YearsExperience,
             profile.BasePriceVnd,
             profile.ServiceRadiusKm,
+            profile.AvatarUrl,
+            profile.BirthDate,
+            profile.WeightKg,
+            profile.HeightCm,
+            profile.Gender,
+            profile.OperatingLocation,
+            profile.TaxCode,
+            profile.CitizenId,
+            profile.CitizenIssueDate,
+            profile.CitizenIssuePlace,
             profile.KycNote,
             profile.KycStatus,
             profile.RatingAvg,
@@ -27,7 +40,7 @@ internal static class CoachProfileMapping
             profile.IsPublic,
             profile.CreatedAt,
             profile.UpdatedAt,
-            sportIds,
+            sports,
             media,
             services,
             kycRecords);

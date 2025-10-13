@@ -151,6 +151,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
+builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
 builder.Services.AddDbContext<FitverseDbContext>((sp, options) =>
 {
     var dbCfg = sp.GetRequiredService<IOptions<DatabaseConfig>>().Value;
