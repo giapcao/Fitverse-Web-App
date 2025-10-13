@@ -12,6 +12,8 @@ public partial class CoachMedium
 
     public string? MediaName { get; set; }
 
+    public string? Description { get; set; }
+
     public CoachMediaType MediaType { get; set; }
 
     public string Url { get; set; } = null!;
