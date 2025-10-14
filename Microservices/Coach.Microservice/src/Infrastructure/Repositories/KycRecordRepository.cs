@@ -37,7 +37,17 @@ public class KycRecordRepository : Repository<KycRecord>, IKycRecordRepository
     public async Task<IReadOnlyList<KycRecord>> GetByCoachIdAsync(Guid coachId, CancellationToken ct)
     {
         return await _context.KycRecords
+            .Include(r => r.Coach)
             .Where(r => r.CoachId == coachId)
+            .OrderByDescending(r => r.SubmittedAt)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<KycRecord>> GetAllDetailedAsync(CancellationToken ct)
+    {
+        return await _context.KycRecords
+            .Include(r => r.Coach)
             .OrderByDescending(r => r.SubmittedAt)
             .AsNoTracking()
             .ToListAsync(ct);
@@ -46,6 +56,7 @@ public class KycRecordRepository : Repository<KycRecord>, IKycRecordRepository
     public async Task<KycRecord?> GetLatestByCoachIdAsync(Guid coachId, CancellationToken ct)
     {
         return await _context.KycRecords
+            .Include(r => r.Coach)
             .Where(r => r.CoachId == coachId)
             .OrderByDescending(r => r.SubmittedAt)
             .AsNoTracking()

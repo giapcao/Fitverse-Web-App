@@ -7,6 +7,19 @@ namespace Application.CoachProfiles.Handler;
 
 internal static class CoachProfileMapping
 {
+    public static CoachProfileSummaryDto ToSummaryDto(CoachProfile profile)
+    {
+        return new CoachProfileSummaryDto(
+            profile.UserId,
+            profile.Fullname,
+            profile.AvatarUrl,
+            profile.OperatingLocation,
+            profile.BasePriceVnd,
+            profile.RatingAvg,
+            profile.RatingCount,
+            profile.IsPublic);
+    }
+
     public static CoachProfileDto ToDto(CoachProfile profile)
     {
         var media = profile.CoachMedia?.Select(CoachMediaMapping.ToDto).ToArray() ?? Array.Empty<CoachMediaDto>();
@@ -99,6 +112,7 @@ internal static class KycRecordMapping
             record.Status,
             record.SubmittedAt,
             record.ReviewedAt,
-            record.ReviewerId);
+            record.ReviewerId,
+            record.Coach is null ? null : CoachProfileMapping.ToSummaryDto(record.Coach));
     }
 }
