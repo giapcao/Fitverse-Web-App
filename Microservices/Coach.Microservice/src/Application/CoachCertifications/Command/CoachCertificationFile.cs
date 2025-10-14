@@ -4,4 +4,4 @@ public sealed record CoachCertificationFile(
     byte[] Content,
     string FileName,
     string ContentType,
-    string? Directory = null);
+    string? Directory = "certifications");

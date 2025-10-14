@@ -10,6 +10,7 @@ public sealed record CreateCoachMediaCommand(
     string? MediaName,
     string? Description,
     CoachMediaType MediaType,
-    string Url,
-    bool Status,
-    bool IsFeatured) : ICommand<CoachMediaDto>;
+    string? Url,
+    bool IsFeatured,
+    string? Directory = "media",
+    CoachMediaFile? File = null) : ICommand<CoachMediaDto>;

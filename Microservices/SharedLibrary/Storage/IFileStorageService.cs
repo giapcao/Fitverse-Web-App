@@ -9,6 +9,8 @@ public interface IFileStorageService
     Task<FileUploadResult> UploadAsync(FileUploadRequest request, CancellationToken cancellationToken = default);
 
     Task<string> GetFileUrlAsync(string key, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 }
 
 public sealed record FileUploadRequest(

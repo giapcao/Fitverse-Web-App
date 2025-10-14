@@ -11,5 +11,5 @@ public sealed record CreateCoachCertificationCommand(
     DateOnly? IssuedOn,
     DateOnly? ExpiresOn,
     string? FileUrl,
-    string? Directory = null,
+    string? Directory = "certifications",
     CoachCertificationFile? File = null) : ICommand<CoachCertificationDto>;

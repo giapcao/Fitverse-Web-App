@@ -41,5 +41,20 @@ public class CoachMediaRepository : Repository<CoachMedium>, ICoachMediaReposito
             .AsNoTracking()
             .ToListAsync(ct);
     }
-}
 
+    public async Task<IReadOnlyList<CoachMedium>> GetFeaturedByCoachIdAsync(Guid coachId, bool isFeatured, CancellationToken ct)
+    {
+        return await _context.CoachMedia
+            .Where(m => m.CoachId == coachId && m.IsFeatured == isFeatured)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<CoachMedium>> GetFeaturedAsync(bool isFeatured, CancellationToken ct)
+    {
+        return await _context.CoachMedia
+            .Where(m => m.IsFeatured == isFeatured)
+            .AsNoTracking()
+            .ToListAsync(ct);
+    }
+}

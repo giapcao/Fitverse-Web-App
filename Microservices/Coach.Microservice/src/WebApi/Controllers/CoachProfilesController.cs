@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using WebAPI.Contracts.Requests;
 
 namespace WebAPI.Controllers;
 
@@ -86,6 +87,45 @@ public class CoachProfilesController : ApiController
     {
         var merged = command with { CoachId = coachId };
         var result = await _mediator.Send(merged, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{coachId:guid}/avatar")]
+    [ProducesResponseType(typeof(CoachProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateAvatar(Guid coachId, [FromForm] UpdateCoachProfileAvatarRequest request, CancellationToken cancellationToken)
+    {
+        if (request.CoachId != Guid.Empty && request.CoachId != coachId)
+        {
+            return BadRequest("CoachId in request does not match the route parameter.");
+        }
+
+        CoachAvatarFile? file = null;
+        if (request.File is not null && request.File.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream, cancellationToken);
+            var directory = string.IsNullOrWhiteSpace(request.Directory) ? "avatar" : request.Directory;
+            file = new CoachAvatarFile(
+                memoryStream.ToArray(),
+                request.File.FileName,
+                request.File.ContentType,
+                directory);
+        }
+
+        var result = await _mediator.Send(new UpdateCoachProfileAvatarCommand(
+            coachId,
+            request.Directory,
+            file),
+            cancellationToken);
+
         if (result.IsFailure)
         {
             return HandleFailure(result);
