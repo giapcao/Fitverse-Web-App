@@ -45,4 +45,31 @@ internal static class CoachProfileAvatarHelper
 
         return result;
     }
+
+    public static async Task<CoachProfileSummaryDto> WithSignedAvatarAsync(CoachProfileSummaryDto dto, IFileStorageService storage, CancellationToken cancellationToken)
+    {
+        if (!ShouldSign(dto.AvatarUrl))
+        {
+            return dto;
+        }
+
+        var signedUrl = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
+        return dto with { AvatarUrl = signedUrl };
+    }
+
+    public static async Task<IReadOnlyList<CoachProfileSummaryDto>> WithSignedAvatarsAsync(IReadOnlyList<CoachProfileSummaryDto> dtos, IFileStorageService storage, CancellationToken cancellationToken)
+    {
+        if (dtos.Count == 0)
+        {
+            return dtos;
+        }
+
+        var result = new CoachProfileSummaryDto[dtos.Count];
+        for (var i = 0; i < dtos.Count; i++)
+        {
+            result[i] = await WithSignedAvatarAsync(dtos[i], storage, cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
+    }
 }

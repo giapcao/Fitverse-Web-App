@@ -11,5 +11,6 @@ public interface IKycRecordRepository : IRepository<KycRecord>
 {
     Task<KycRecord?> GetDetailedByIdAsync(Guid id, CancellationToken ct, bool asNoTracking = false);
     Task<IReadOnlyList<KycRecord>> GetByCoachIdAsync(Guid coachId, CancellationToken ct);
+    Task<IReadOnlyList<KycRecord>> GetAllDetailedAsync(CancellationToken ct);
     Task<KycRecord?> GetLatestByCoachIdAsync(Guid coachId, CancellationToken ct);
 }

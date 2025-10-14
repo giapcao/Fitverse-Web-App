@@ -27,11 +27,25 @@ public class CoachProfilesController : ApiController
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CoachProfileDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProfiles(
+        [FromQuery] string? operatingLocation,
+        [FromQuery] decimal? minPriceVnd,
+        [FromQuery] decimal? maxPriceVnd,
+        [FromQuery] decimal? minRating,
+        [FromQuery] string? gender,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ListCoachProfilesQuery(pageNumber, pageSize), cancellationToken);
+        var result = await _mediator.Send(
+            new ListCoachProfilesQuery(
+                operatingLocation,
+                minPriceVnd,
+                maxPriceVnd,
+                minRating,
+                gender,
+                pageNumber,
+                pageSize),
+            cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);

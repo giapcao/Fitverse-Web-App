@@ -1,3 +1,4 @@
+using Application.CoachProfiles.Handler;
 using Application.Features;
 using Domain.Persistence.Models;
 
@@ -15,6 +16,7 @@ internal static class KycRecordMapping
             record.Status,
             record.SubmittedAt,
             record.ReviewedAt,
-            record.ReviewerId);
+            record.ReviewerId,
+            record.Coach is null ? null : CoachProfileMapping.ToSummaryDto(record.Coach));
     }
 }
