@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Application.Common.Services;
+namespace SharedLibrary.Storage;
 
 public interface IFileStorageService
 {
@@ -12,7 +12,7 @@ public interface IFileStorageService
 }
 
 public sealed record FileUploadRequest(
-    Guid CoachId,
+    Guid OwnerId,
     byte[] Content,
     string FileName,
     string ContentType,

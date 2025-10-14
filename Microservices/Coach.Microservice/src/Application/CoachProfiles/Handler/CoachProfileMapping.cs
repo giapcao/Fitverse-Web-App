@@ -55,6 +55,7 @@ internal static class CoachMediaMapping
             medium.Id,
             medium.CoachId,
             medium.MediaName,
+            medium.Description,
             medium.MediaType,
             medium.Url,
             medium.Status,

@@ -11,7 +11,6 @@ public sealed class CreateCoachCertificationRequest
     public DateOnly? IssuedOn { get; init; }
     public DateOnly? ExpiresOn { get; init; }
     public string? FileUrl { get; init; }
-    public string? Status { get; init; }
     public string? Directory { get; init; } = "certifications";
     public IFormFile? File { get; init; }
 }

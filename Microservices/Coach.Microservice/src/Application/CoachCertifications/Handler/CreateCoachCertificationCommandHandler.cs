@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.CoachCertifications.Command;
 using Application.Features;
-using Application.Common.Services;
 using Domain.IRepositories;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.CoachCertifications.Handler;
 
@@ -39,7 +39,7 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
             return Result.Failure<CoachCertificationDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
-        var fileUrl = request.FileUrl;
+        var fileKey = request.FileUrl;
         if (request.File is not null)
         {
             var directory = request.File.Directory ?? request.Directory ?? "certifications";
@@ -51,7 +51,7 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
                     request.File.ContentType,
                     directory),
                 cancellationToken);
-            fileUrl = uploadResult.Url;
+            fileKey = uploadResult.Key;
         }
 
         var utcNow = DateTime.UtcNow;
@@ -62,8 +62,7 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
             Issuer = request.Issuer,
             IssuedOn = request.IssuedOn,
             ExpiresOn = request.ExpiresOn,
-            FileUrl = fileUrl,
-            Status = string.IsNullOrWhiteSpace(request.Status) ? "pending" : request.Status,
+            FileUrl = fileKey,
             ReviewedBy = null,
             ReviewedAt = null,
             CreatedAt = utcNow,
@@ -74,7 +73,9 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _certificationRepository.GetDetailedByIdAsync(certification.Id, cancellationToken, asNoTracking: true) ?? certification;
-        return Result.Success(CoachCertificationMapping.ToDto(created));
+        var dto = CoachCertificationMapping.ToDto(created);
+        dto = await CoachCertificationFileUrlHelper.WithSignedFileUrlAsync(dto, _fileStorageService, cancellationToken);
+        return Result.Success(dto);
     }
 }
 
