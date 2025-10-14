@@ -4,4 +4,4 @@ using Application.Features;
 
 namespace Application.CoachCertifications.Command;
 
-public sealed record InactivateCoachCertificationCommand(Guid CertificationId) : ICommand<CoachCertificationDto>;
+public sealed record InactivateCoachCertificationCommand(Guid CertificationId, Guid? ReviewedBy = null) : ICommand<CoachCertificationDto>;

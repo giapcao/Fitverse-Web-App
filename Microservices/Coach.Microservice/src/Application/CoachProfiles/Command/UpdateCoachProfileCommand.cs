@@ -12,7 +12,6 @@ public sealed record UpdateCoachProfileCommand(
     int? YearsExperience,
     long? BasePriceVnd,
     decimal? ServiceRadiusKm,
-    string? AvatarUrl,
     DateOnly? BirthDate,
     decimal? WeightKg,
     decimal? HeightCm,

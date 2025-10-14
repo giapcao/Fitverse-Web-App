@@ -40,6 +40,12 @@ public sealed class ActivateCoachCertificationCommandHandler : ICommandHandler<A
         certification.Status = ActiveStatus;
         certification.UpdatedAt = DateTime.UtcNow;
 
+        if (request.ReviewedBy.HasValue)
+        {
+            certification.ReviewedBy = request.ReviewedBy;
+            certification.ReviewedAt = DateTime.UtcNow;
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetDetailedByIdAsync(certification.Id, cancellationToken, asNoTracking: true) ?? certification;

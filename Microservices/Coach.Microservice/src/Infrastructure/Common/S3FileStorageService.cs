@@ -62,6 +62,8 @@ public sealed class S3FileStorageService : IFileStorageService
             throw new ArgumentException("Object key must not be empty.", nameof(key));
         }
 
+        key = NormalizeKey(key);
+
         if (expiresIn is { } ttl && ttl > TimeSpan.Zero)
         {
             var presignRequest = new GetPreSignedUrlRequest
@@ -91,12 +93,12 @@ public sealed class S3FileStorageService : IFileStorageService
             .Replace("/", "_", StringComparison.Ordinal)
             .Replace("\\", "_", StringComparison.Ordinal);
         var directorySegment = string.IsNullOrWhiteSpace(request.Directory)
-            ? "certifications"
+            ? "coach"
             : request.Directory.Trim().Trim('/').Replace("..", string.Empty);
 
         if (string.IsNullOrWhiteSpace(directorySegment))
         {
-            directorySegment = "certifications";
+            directorySegment = "coach";
         }
 
         var ownerSegment = request.OwnerId.ToString("D");
@@ -147,5 +149,50 @@ public sealed class S3FileStorageService : IFileStorageService
         }
 
         return new AmazonS3Client(credentials, s3Config);
+    }
+
+    public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        var normalizedKey = NormalizeKey(key);
+
+        try
+        {
+            var deleteRequest = new DeleteObjectRequest
+            {
+                BucketName = _config.BucketName,
+                Key = normalizedKey
+            };
+
+            await _s3Client.DeleteObjectAsync(deleteRequest, cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("Deleted file with key {Key} from S3 bucket {Bucket}", normalizedKey, _config.BucketName);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete file with key {Key} from S3 bucket {Bucket}", normalizedKey, _config.BucketName);
+        }
+    }
+
+    private string NormalizeKey(string key)
+    {
+        var trimmed = key.Trim();
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+        {
+            var path = uri.AbsolutePath.TrimStart('/');
+
+            if (!string.IsNullOrWhiteSpace(_config.BucketName) &&
+                path.StartsWith($"{_config.BucketName}/", StringComparison.OrdinalIgnoreCase))
+            {
+                path = path.Substring(_config.BucketName.Length + 1);
+            }
+
+            return path;
+        }
+
+        return trimmed.TrimStart('/');
     }
 }

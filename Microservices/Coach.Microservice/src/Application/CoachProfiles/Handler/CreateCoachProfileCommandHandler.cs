@@ -8,6 +8,7 @@ using Domain.IRepositories;
 using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
+using SharedLibrary.Storage;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.CoachProfiles.Handler;
@@ -16,11 +17,13 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
 {
     private readonly ICoachProfileRepository _repository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
 
-    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IUnitOfWork unitOfWork)
+    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IUnitOfWork unitOfWork, IFileStorageService fileStorageService)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<CoachProfileDto>> Handle(CreateCoachProfileCommand request, CancellationToken cancellationToken)
@@ -40,7 +43,7 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
             YearsExperience = request.YearsExperience,
             BasePriceVnd = request.BasePriceVnd,
             ServiceRadiusKm = request.ServiceRadiusKm,
-            AvatarUrl = request.AvatarUrl,
+            AvatarUrl = CoachProfileAvatarHelper.DefaultAvatar,
             BirthDate = request.BirthDate,
             WeightKg = request.WeightKg,
             HeightCm = request.HeightCm,
@@ -62,6 +65,8 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
-        return Result.Success(CoachProfileMapping.ToDto(created));
+        var dto = CoachProfileMapping.ToDto(created);
+        dto = await CoachProfileAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, cancellationToken);
+        return Result.Success(dto);
     }
 }
