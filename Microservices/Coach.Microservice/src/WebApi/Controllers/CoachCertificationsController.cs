@@ -100,7 +100,6 @@ public class CoachCertificationsController : ApiController
             request.IssuedOn,
             request.ExpiresOn,
             request.FileUrl,
-            request.Status ?? string.Empty,
             request.Directory,
             file);
         var result = await _mediator.Send(command, cancellationToken);
@@ -141,5 +140,33 @@ public class CoachCertificationsController : ApiController
         }
 
         return NoContent();
+    }
+
+    [HttpPost("{certificationId:guid}/activate")]
+    [ProducesResponseType(typeof(CoachCertificationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ActivateCertification(Guid certificationId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ActivateCoachCertificationCommand(certificationId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("{certificationId:guid}/deactivate")]
+    [ProducesResponseType(typeof(CoachCertificationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeactivateCertification(Guid certificationId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new InactivateCoachCertificationCommand(certificationId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
     }
 }

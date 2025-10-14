@@ -30,6 +30,10 @@ public sealed class UpdateCoachMediaCommandHandler : ICommandHandler<UpdateCoach
         }
 
         medium.MediaName = request.MediaName ?? medium.MediaName;
+        if (request.Description is not null)
+        {
+            medium.Description = request.Description;
+        }
 
         if (request.MediaType.HasValue)
         {

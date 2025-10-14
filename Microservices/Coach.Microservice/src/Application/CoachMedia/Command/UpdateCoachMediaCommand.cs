@@ -8,6 +8,7 @@ namespace Application.CoachMedia.Command;
 public sealed record UpdateCoachMediaCommand(
     Guid MediaId,
     string? MediaName,
+    string? Description,
     CoachMediaType? MediaType,
     string? Url,
     bool? Status,

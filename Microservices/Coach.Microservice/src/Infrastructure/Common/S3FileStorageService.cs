@@ -6,10 +6,10 @@ using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Application.Common.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SharedLibrary.Configs;
+using SharedLibrary.Storage;
 
 namespace Infrastructure.Common;
 
@@ -99,8 +99,8 @@ public sealed class S3FileStorageService : IFileStorageService
             directorySegment = "certifications";
         }
 
-        var coachSegment = request.CoachId.ToString("D");
-        return $"{coachSegment}/{directorySegment}/{Guid.NewGuid():N}-{sanitizedFileName}";
+        var ownerSegment = request.OwnerId.ToString("D");
+        return $"{ownerSegment}/{directorySegment}/{Guid.NewGuid():N}-{sanitizedFileName}";
     }
 
     private string BuildFileUrl(string key)

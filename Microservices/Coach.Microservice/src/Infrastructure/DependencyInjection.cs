@@ -1,5 +1,4 @@
 using Amazon.S3;
-using Application.Common.Services;
 using Domain.IRepositories;
 using Infrastructure.Common;
 using Infrastructure.Repositories;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using SharedLibrary.Storage;
 using SharedLibrary.Utils;
 
 namespace Infrastructure;

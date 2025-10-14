@@ -39,6 +39,7 @@ public sealed class CreateCoachMediaCommandHandler : ICommandHandler<CreateCoach
         {
             CoachId = request.CoachId,
             MediaName = request.MediaName,
+            Description = request.Description,
             MediaType = request.MediaType,
             Url = request.Url,
             Status = request.Status,
