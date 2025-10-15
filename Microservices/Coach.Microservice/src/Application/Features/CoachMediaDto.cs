@@ -10,6 +10,7 @@ public record CoachMediaDto(
     string? Description,
     CoachMediaType MediaType,
     string Url,
+    string DownloadUrl,
     bool Status,
     bool IsFeatured,
     DateTime CreatedAt,

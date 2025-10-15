@@ -10,6 +10,7 @@ public record CoachCertificationDto(
     DateOnly? IssuedOn,
     DateOnly? ExpiresOn,
     string? FileUrl,
+    string? FileDownloadUrl,
     string Status,
     Guid? ReviewedBy,
     DateTime? ReviewedAt,

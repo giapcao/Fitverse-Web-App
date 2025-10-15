@@ -55,7 +55,7 @@ public sealed class S3FileStorageService : IFileStorageService
         return new FileUploadResult(key, url);
     }
 
-    public Task<string> GetFileUrlAsync(string key, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default)
+    public Task<FileAccessUrls> GetFileUrlAsync(string key, TimeSpan? expiresIn = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(key))
         {
@@ -63,28 +63,20 @@ public sealed class S3FileStorageService : IFileStorageService
         }
 
         key = NormalizeKey(key);
+        var inlineDisposition = "inline";
+        var downloadDisposition = $"attachment; filename=\"{Path.GetFileName(key)}\"";
 
         if (expiresIn is { } ttl && ttl > TimeSpan.Zero)
         {
-            var presignRequest = new GetPreSignedUrlRequest
-            {
-                BucketName = _config.BucketName,
-                Key = key,
-                Expires = DateTime.UtcNow.Add(ttl)
-            };
-
-            if (!string.IsNullOrWhiteSpace(_config.ServiceUrl))
-            {
-                presignRequest.Protocol = _config.ServiceUrl.StartsWith("https", StringComparison.OrdinalIgnoreCase)
-                    ? Protocol.HTTPS
-                    : Protocol.HTTP;
-            }
-
-            var url = _s3Client.GetPreSignedURL(presignRequest);
-            return Task.FromResult(url);
+            var inlineUrl = CreatePreSignedUrl(key, ttl, inlineDisposition);
+            var downloadUrl = CreatePreSignedUrl(key, ttl, downloadDisposition);
+            return Task.FromResult(new FileAccessUrls(inlineUrl, downloadUrl));
         }
 
-        return Task.FromResult(BuildFileUrl(key));
+        var baseUrl = BuildFileUrl(key);
+        var inlineLink = AppendContentDisposition(baseUrl, inlineDisposition);
+        var downloadLink = AppendContentDisposition(baseUrl, downloadDisposition);
+        return Task.FromResult(new FileAccessUrls(inlineLink, downloadLink));
     }
 
     private string BuildObjectKey(FileUploadRequest request)
@@ -194,5 +186,38 @@ public sealed class S3FileStorageService : IFileStorageService
         }
 
         return trimmed.TrimStart('/');
+    }
+
+    private string CreatePreSignedUrl(string key, TimeSpan ttl, string contentDisposition)
+    {
+        var request = CreateBasePreSignedRequest(key, ttl);
+        request.ResponseHeaderOverrides ??= new ResponseHeaderOverrides();
+        request.ResponseHeaderOverrides.ContentDisposition = contentDisposition;
+        return _s3Client.GetPreSignedURL(request);
+    }
+
+    private GetPreSignedUrlRequest CreateBasePreSignedRequest(string key, TimeSpan ttl)
+    {
+        var request = new GetPreSignedUrlRequest
+        {
+            BucketName = _config.BucketName,
+            Key = key,
+            Expires = DateTime.UtcNow.Add(ttl)
+        };
+
+        if (!string.IsNullOrWhiteSpace(_config.ServiceUrl))
+        {
+            request.Protocol = _config.ServiceUrl.StartsWith("https", StringComparison.OrdinalIgnoreCase)
+                ? Protocol.HTTPS
+                : Protocol.HTTP;
+        }
+
+        return request;
+    }
+
+    private static string AppendContentDisposition(string url, string contentDisposition)
+    {
+        var separator = url.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return $"{url}{separator}response-content-disposition={Uri.EscapeDataString(contentDisposition)}";
     }
 }

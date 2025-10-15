@@ -15,6 +15,7 @@ internal static class CoachCertificationMapping
             certification.IssuedOn,
             certification.ExpiresOn,
             certification.FileUrl,
+            certification.FileUrl,
             certification.Status,
             certification.ReviewedBy,
             certification.ReviewedAt,

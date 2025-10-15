@@ -14,6 +14,7 @@ internal static class CoachMediaMapping
             medium.Description,
             medium.MediaType,
             medium.Url,
+            medium.Url,
             medium.Status,
             medium.IsFeatured,
             medium.CreatedAt,

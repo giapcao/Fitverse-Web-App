@@ -12,6 +12,7 @@ public record CoachProfileDto(
     long? BasePriceVnd,
     decimal? ServiceRadiusKm,
     string? AvatarUrl,
+    string? AvatarDownloadUrl,
     DateOnly? BirthDate,
     decimal? WeightKg,
     decimal? HeightCm,

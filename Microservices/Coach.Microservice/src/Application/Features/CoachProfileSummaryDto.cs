@@ -6,6 +6,7 @@ public record CoachProfileSummaryDto(
     Guid CoachId,
     string? Fullname,
     string? AvatarUrl,
+    string? AvatarDownloadUrl,
     string? OperatingLocation,
     long? BasePriceVnd,
     decimal? RatingAvg,
