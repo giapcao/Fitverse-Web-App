@@ -1,4 +1,3 @@
-using System.Linq;
 using Application.Features;
 using Domain.Persistence.Models;
 using Mapster;
