@@ -15,4 +15,5 @@ public static class VnPayErrors
 
     public static readonly Error OrderIdRequired =
         new("VNPay.OrderIdRequired", "orderId is required.");
+
 }

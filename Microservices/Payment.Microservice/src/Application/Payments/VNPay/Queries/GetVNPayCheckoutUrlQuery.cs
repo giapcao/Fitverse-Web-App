@@ -1,23 +1,32 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
+using System.Net;
+using System.Net.Sockets;
 using Application.Abstractions.Messaging;
+using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Payments.VNPay.Queries;
 
-public sealed record GetVNPayCheckoutUrlQuery(
+public sealed record GetVnPayCheckoutUrlQuery(
     long AmountVnd,
     string OrderId,
     string ClientIp,
     VNPayConfiguration Configuration,
     DateTime RequestedAtUtc) : IQuery<string>;
 
-internal sealed class GetVNPayCheckoutUrlQueryHandler : IQueryHandler<GetVNPayCheckoutUrlQuery, string>
+internal sealed class GetVnPayCheckoutUrlQueryHandler : IQueryHandler<GetVnPayCheckoutUrlQuery, string>
 {
-    public Task<Result<string>> Handle(GetVNPayCheckoutUrlQuery request, CancellationToken cancellationToken)
+    private readonly ILogger<GetVnPayCheckoutUrlQueryHandler> _logger;
+
+    public GetVnPayCheckoutUrlQueryHandler(ILogger<GetVnPayCheckoutUrlQueryHandler> logger)
     {
-        if (!request.Configuration.IsComplete)
+        _logger = logger;
+    }
+
+    public Task<Result<string>> Handle(GetVnPayCheckoutUrlQuery request, CancellationToken cancellationToken)
+    {
+        var configuration = request.Configuration;
+        if (!configuration.IsComplete)
         {
             return Task.FromResult(Result.Failure<string>(VnPayErrors.ConfigurationMissing));
         }
@@ -27,49 +36,65 @@ internal sealed class GetVNPayCheckoutUrlQueryHandler : IQueryHandler<GetVNPayCh
             return Task.FromResult(Result.Failure<string>(VnPayErrors.AmountMustBeGreaterThanZero));
         }
 
-        if (string.IsNullOrWhiteSpace(request.OrderId))
+        var orderId = request.OrderId?.Trim();
+        if (string.IsNullOrWhiteSpace(orderId))
         {
             return Task.FromResult(Result.Failure<string>(VnPayErrors.OrderIdRequired));
         }
 
-        long amountInMinorUnits;
         try
         {
-            amountInMinorUnits = checked(request.AmountVnd * 100);
+            var signedRequest = VnPayHelper.BuildPaymentUrl(
+                configuration,
+                request.AmountVnd,
+                orderId,
+                NormalizeClientIp(request.ClientIp),
+                request.RequestedAtUtc);
+
+            _logger.LogInformation(
+                "VNPay checkout rawQuery={RawQuery} secureHash={SecureHash}",
+                signedRequest.RawQuery,
+                signedRequest.SecureHash);
+
+            return Task.FromResult(Result.Success(signedRequest.PaymentUrl));
         }
-        catch (OverflowException)
+        catch (ArgumentException ex)
         {
-            return Task.FromResult(Result.Failure<string>(VnPayErrors.AmountTooLarge));
+            _logger.LogError(ex, "VNPay checkout URL generation failed due to invalid configuration.");
+            return Task.FromResult(Result.Failure<string>(VnPayErrors.ConfigurationMissing));
+        }
+    }
+
+    private static string NormalizeClientIp(string? clientIp)
+    {
+        if (string.IsNullOrWhiteSpace(clientIp))
+        {
+            return "127.0.0.1";
         }
 
-        var vietnamTimeZone = VnPayHelper.GetVietnamTimeZone();
-        var nowVietnam = TimeZoneInfo.ConvertTime(request.RequestedAtUtc, vietnamTimeZone);
-        var createDate = nowVietnam.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
-        var expireDate = nowVietnam.AddMinutes(15).ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
-
-        var parameters = new Dictionary<string, string>(StringComparer.Ordinal)
+        clientIp = clientIp.Trim();
+        if (IPAddress.TryParse(clientIp, out var address))
         {
-            ["vnp_Version"] = "2.1.0",
-            ["vnp_Command"] = "pay",
-            ["vnp_TmnCode"] = request.Configuration.TmnCode,
-            ["vnp_Amount"] = amountInMinorUnits.ToString(CultureInfo.InvariantCulture),
-            ["vnp_CurrCode"] = "VND",
-            ["vnp_TxnRef"] = request.OrderId,
-            ["vnp_OrderInfo"] = $"Payment for order {request.OrderId}",
-            ["vnp_OrderType"] = "other",
-            ["vnp_Locale"] = "vn",
-            ["vnp_ReturnUrl"] = request.Configuration.ReturnUrl,
-            ["vnp_IpnUrl"] = request.Configuration.IpnUrl,
-            ["vnp_CreateDate"] = createDate,
-            ["vnp_ExpireDate"] = expireDate,
-            ["vnp_IpAddr"] = request.ClientIp
-        };
+            if (address.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return address.ToString();
+            }
 
-        var paymentUrl = VnPayHelper.CreatePaymentUrl(
-            request.Configuration.BaseUrl,
-            request.Configuration.HashSecret,
-            parameters);
+            if (address.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                return "127.0.0.1";
+            }
+        }
 
-        return Task.FromResult(Result.Success(paymentUrl));
+        var segments = clientIp.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var segment in segments)
+        {
+            if (IPAddress.TryParse(segment, out var ipv4) && ipv4.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return ipv4.ToString();
+            }
+        }
+
+        return "127.0.0.1";
     }
 }

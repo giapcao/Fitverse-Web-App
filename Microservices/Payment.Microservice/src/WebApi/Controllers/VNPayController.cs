@@ -1,20 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Application.Payments.VNPay;
 using Application.Payments.VNPay.Commands;
 using Application.Payments.VNPay.Queries;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SharedLibrary.Common.ResponseModel;
-using WebApi.Constants;
 using WebApi.Options;
 
 namespace WebApi.Controllers;
@@ -40,7 +32,7 @@ public sealed class VnPayController : ControllerBase
         var config = BuildConfiguration();
         var clientIp = ResolveClientIp();
 
-        var query = new GetVNPayCheckoutUrlQuery(
+        var query = new GetVnPayCheckoutUrlQuery(
             amountVnd,
             orderId,
             clientIp,
@@ -53,7 +45,10 @@ public sealed class VnPayController : ControllerBase
             return CreateErrorResponse(result.Error);
         }
 
-        return Redirect(result.Value);
+        return Ok(new
+        {
+            url = result.Value
+        });
     }
 
     [HttpGet("vnpay/return")]
@@ -101,19 +96,30 @@ public sealed class VnPayController : ControllerBase
 
     private string ResolveClientIp()
     {
-        var forwardedFor = Request.Headers["X-Forwarded-For"].ToString();
-        if (!string.IsNullOrWhiteSpace(forwardedFor))
+        if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
         {
-            var forwardedIp = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            var realIp = forwarded
+                .ToString()
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(forwardedIp))
+            if (!string.IsNullOrWhiteSpace(realIp))
             {
-                return forwardedIp;
+                return realIp;
             }
         }
 
-        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+        var remoteIp = HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp != null)
+        {
+            if (remoteIp.IsIPv4MappedToIPv6)
+                remoteIp = remoteIp.MapToIPv4();
+
+            return remoteIp.ToString();
+        }
+
+        return "127.0.0.1";
     }
+
 
     private IActionResult CreateErrorResponse(Error error)
     {

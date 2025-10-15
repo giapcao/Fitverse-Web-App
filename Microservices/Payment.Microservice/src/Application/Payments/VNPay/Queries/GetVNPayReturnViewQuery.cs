@@ -14,11 +14,11 @@ public sealed record GetVNPayReturnViewQuery(
     IReadOnlyDictionary<string, string> QueryParameters,
     VNPayConfiguration Configuration) : IQuery<VNPayReturnView>;
 
-internal sealed class GetVNPayReturnViewQueryHandler : IQueryHandler<GetVNPayReturnViewQuery, VNPayReturnView>
+internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayReturnViewQuery, VNPayReturnView>
 {
-    private readonly ILogger<GetVNPayReturnViewQueryHandler> _logger;
+    private readonly ILogger<GetVnPayReturnViewQueryHandler> _logger;
 
-    public GetVNPayReturnViewQueryHandler(ILogger<GetVNPayReturnViewQueryHandler> logger)
+    public GetVnPayReturnViewQueryHandler(ILogger<GetVnPayReturnViewQueryHandler> logger)
     {
         _logger = logger;
     }
@@ -30,32 +30,22 @@ internal sealed class GetVNPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
             return Task.FromResult(Result.Failure<VNPayReturnView>(VnPayErrors.ConfigurationMissing));
         }
 
-        var query = new Dictionary<string, string>(request.QueryParameters, StringComparer.Ordinal);
-        query.TryGetValue("vnp_SecureHash", out var secureHash);
+        var parameters = new Dictionary<string, string>(request.QueryParameters, StringComparer.OrdinalIgnoreCase);
+        var signatureValid = VnPayHelper.ValidateSignature(parameters, request.Configuration.HashSecret);
+        if (!signatureValid)
+        {
+            _logger.LogWarning("VNPay return signature failed validation for payload {@Payload}", parameters);
+        }
 
-        var filtered = query
-            .Where(kvp => !string.Equals(kvp.Key, "vnp_SecureHash", StringComparison.OrdinalIgnoreCase) &&
-                          !string.Equals(kvp.Key, "vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.Ordinal);
+        var responseCode = parameters.TryGetValue("vnp_ResponseCode", out var code) ? code : string.Empty;
+        var transactionStatus = parameters.TryGetValue("vnp_TransactionStatus", out var status) ? status : string.Empty;
+        var amount = parameters.TryGetValue("vnp_Amount", out var amountValue) ? amountValue : string.Empty;
 
-        var dataToVerify = VnPayHelper.BuildDataToVerify(filtered);
-        var calculatedHash = VnPayHelper.HmacSha512(request.Configuration.HashSecret, dataToVerify);
-        _logger.LogInformation(
-            "VNPay return signature verification - data: {Data}, calculated hash: {CalculatedHash}, provided hash: {ProvidedHash}",
-            dataToVerify,
-            calculatedHash,
-            secureHash);
-
-        var isSignatureValid = !string.IsNullOrWhiteSpace(secureHash) &&
-                               string.Equals(calculatedHash, secureHash, StringComparison.OrdinalIgnoreCase);
-
-        var responseCode = query.TryGetValue("vnp_ResponseCode", out var code) ? code : string.Empty;
-        var isSuccess = isSignatureValid && string.Equals(responseCode, "00", StringComparison.Ordinal);
-        var txnRef = query.TryGetValue("vnp_TxnRef", out var refValue) ? refValue : string.Empty;
-        var amount = query.TryGetValue("vnp_Amount", out var amountValue) ? amountValue : string.Empty;
+        var txnRef = ResolveTransactionReference(parameters);
+        var isSuccess = signatureValid && VnPayHelper.IsSuccess(responseCode, transactionStatus);
 
         var title = isSuccess ? "Payment Successful" : "Payment Failed";
-        var statusMessage = isSignatureValid
+        var statusMessage = signatureValid
             ? (isSuccess ? "Your payment was recorded successfully." : "The payment was not completed.")
             : "Signature validation failed.";
 
@@ -100,7 +90,7 @@ internal sealed class GetVNPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
             .AppendLine("</dd>");
         builder.AppendLine("            <dt>Signature Valid:</dt>");
         builder.Append("            <dd>")
-            .Append(isSignatureValid)
+            .Append(signatureValid)
             .AppendLine("</dd>");
         builder.AppendLine("        </dl>");
         builder.AppendLine("    </div>");
@@ -108,8 +98,32 @@ internal sealed class GetVNPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
         builder.AppendLine("</html>");
 
         var html = builder.ToString();
+        var view = new VNPayReturnView(html, signatureValid, isSuccess, responseCode, txnRef);
 
-        var view = new VNPayReturnView(html, isSignatureValid, isSuccess, responseCode, txnRef);
         return Task.FromResult(Result.Success(view));
+    }
+
+    private static string ResolveTransactionReference(IReadOnlyDictionary<string, string> parameters)
+    {
+        if (parameters.TryGetValue("vnp_TxnRef", out var txnRef) && !string.IsNullOrWhiteSpace(txnRef))
+        {
+            return txnRef;
+        }
+
+        if (parameters.TryGetValue("vnp_OrderInfo", out var orderInfo) && !string.IsNullOrWhiteSpace(orderInfo))
+        {
+            var token = orderInfo
+                .Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .LastOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                return token;
+            }
+
+            return orderInfo;
+        }
+
+        return string.Empty;
     }
 }

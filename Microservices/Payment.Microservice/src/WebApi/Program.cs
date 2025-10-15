@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Domain.Enums;
 using Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Npgsql;
@@ -155,7 +156,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSwagger();
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    KnownNetworks = { }, 
+    KnownProxies  = { }
+});
 
 app.UseSerilogRequestLogging();
 
