@@ -23,11 +23,16 @@ internal static class CoachProfileAvatarHelper
     {
         if (!ShouldSign(dto.AvatarUrl))
         {
-            return dto;
+            var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
+            return dto with { AvatarDownloadUrl = downloadUrl };
         }
 
-        var signedUrl = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
-        return dto with { AvatarUrl = signedUrl };
+        var signedUrls = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
+        return dto with
+        {
+            AvatarUrl = signedUrls.InlineUrl,
+            AvatarDownloadUrl = signedUrls.DownloadUrl
+        };
     }
 
     public static async Task<IReadOnlyList<CoachProfileDto>> WithSignedAvatarsAsync(IReadOnlyList<CoachProfileDto> dtos, IFileStorageService storage, CancellationToken cancellationToken)
@@ -50,11 +55,16 @@ internal static class CoachProfileAvatarHelper
     {
         if (!ShouldSign(dto.AvatarUrl))
         {
-            return dto;
+            var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
+            return dto with { AvatarDownloadUrl = downloadUrl };
         }
 
-        var signedUrl = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
-        return dto with { AvatarUrl = signedUrl };
+        var signedUrls = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
+        return dto with
+        {
+            AvatarUrl = signedUrls.InlineUrl,
+            AvatarDownloadUrl = signedUrls.DownloadUrl
+        };
     }
 
     public static async Task<IReadOnlyList<CoachProfileSummaryDto>> WithSignedAvatarsAsync(IReadOnlyList<CoachProfileSummaryDto> dtos, IFileStorageService storage, CancellationToken cancellationToken)

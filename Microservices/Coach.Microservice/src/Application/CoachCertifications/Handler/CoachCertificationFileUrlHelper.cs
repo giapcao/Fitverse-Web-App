@@ -16,16 +16,26 @@ internal static class CoachCertificationFileUrlHelper
         IFileStorageService fileStorageService,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.FileUrl) || IsAbsoluteUrl(dto.FileUrl))
+        if (string.IsNullOrWhiteSpace(dto.FileUrl))
         {
             return dto;
         }
 
-        var signedUrl = await fileStorageService
+        if (IsAbsoluteUrl(dto.FileUrl))
+        {
+            var downloadUrl = dto.FileDownloadUrl ?? dto.FileUrl;
+            return dto with { FileDownloadUrl = downloadUrl };
+        }
+
+        var signedUrls = await fileStorageService
             .GetFileUrlAsync(dto.FileUrl, SignedUrlLifetime, cancellationToken)
             .ConfigureAwait(false);
 
-        return dto with { FileUrl = signedUrl };
+        return dto with
+        {
+            FileUrl = signedUrls.InlineUrl,
+            FileDownloadUrl = signedUrls.DownloadUrl
+        };
     }
 
     public static async Task<IReadOnlyList<CoachCertificationDto>> WithSignedFileUrlsAsync(
