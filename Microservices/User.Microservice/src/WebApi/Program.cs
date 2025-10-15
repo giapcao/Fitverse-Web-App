@@ -24,7 +24,6 @@ builder.Host.UseSerilog((hostingContext, loggerConfiguration) => loggerConfigura
     .ReadFrom.Configuration(hostingContext.Configuration));
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
-builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
 builder.Services.AddDbContext<MyDbContext>((serviceProvider, options) =>
 {
     var databaseConfig = serviceProvider.GetService<IOptions<DatabaseConfig>>()!.Value;

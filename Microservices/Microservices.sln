@@ -248,6 +248,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Payment.M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApi", "Payment.Microservice\src\WebApi\WebApi.csproj", "{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Booking.Microservice", "Booking.Microservice", "{EDB236FE-BA87-4B34-A0BF-43E21B738FFE}"
+	ProjectSection(SolutionItems) = preProject
+		Booking.Microservice\.dockerignore = Booking.Microservice\.dockerignore
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B77A3EE0-CDDF-42E7-A36C-A0253A559FFE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{2F63C188-C1AD-4EBF-B6F7-C517F7F10A93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -280,6 +289,8 @@ Global
 		{584ECD13-CC7E-4C8A-82BA-B2BCCAC249B9} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
 		{3D5F0C1F-FEDC-4E09-A605-44DB709F181D} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
 		{0A2542C7-9274-4EDE-A4B2-C76BEEA1794F} = {29B3AAD0-F078-4D58-9BF1-B6DA2376A286}
+		{B77A3EE0-CDDF-42E7-A36C-A0253A559FFE} = {EDB236FE-BA87-4B34-A0BF-43E21B738FFE}
+		{2F63C188-C1AD-4EBF-B6F7-C517F7F10A93} = {EDB236FE-BA87-4B34-A0BF-43E21B738FFE}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{492E3D48-880D-4A51-9543-364359E88CF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
