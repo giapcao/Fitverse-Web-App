@@ -16,13 +16,11 @@ namespace Application.CoachProfiles.Handler;
 public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoachProfileCommand, CoachProfileDto>
 {
     private readonly ICoachProfileRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
-    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IUnitOfWork unitOfWork, IFileStorageService fileStorageService)
+    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -62,7 +60,6 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         };
 
         await _repository.AddAsync(profile, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
         var dto = CoachProfileMapping.ToDto(created);
@@ -70,3 +67,4 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         return Result.Success(dto);
     }
 }
+

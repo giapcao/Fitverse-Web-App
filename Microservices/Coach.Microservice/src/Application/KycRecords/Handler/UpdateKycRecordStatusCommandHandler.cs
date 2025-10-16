@@ -13,26 +13,22 @@ public sealed class UpdateKycRecordStatusCommandHandler : ICommandHandler<Update
 {
     private readonly IKycRecordRepository _repository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
     public UpdateKycRecordStatusCommandHandler(
         IKycRecordRepository repository,
-        ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork)
+        ICoachProfileRepository profileRepository)
     {
         _repository = repository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public Task<Result<KycRecordDto>> Handle(UpdateKycRecordStatusCommand request, CancellationToken cancellationToken) =>
         KycRecordStatusUpdater.UpdateAsync(
             _repository,
             _profileRepository,
-            _unitOfWork,
             request.RecordId,
             request.Status,
             request.AdminNote,
             request.ReviewerId,
             cancellationToken);
 }
+

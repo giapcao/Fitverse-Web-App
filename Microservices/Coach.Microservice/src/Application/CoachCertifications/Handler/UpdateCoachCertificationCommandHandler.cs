@@ -14,16 +14,13 @@ namespace Application.CoachCertifications.Handler;
 public sealed class UpdateCoachCertificationCommandHandler : ICommandHandler<UpdateCoachCertificationCommand, CoachCertificationDto>
 {
     private readonly ICoachCertificationRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public UpdateCoachCertificationCommandHandler(
         ICoachCertificationRepository repository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -65,8 +62,6 @@ public sealed class UpdateCoachCertificationCommandHandler : ICommandHandler<Upd
         }
 
         certification.UpdatedAt = DateTime.UtcNow;
-
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetDetailedByIdAsync(certification.Id, cancellationToken, asNoTracking: true) ?? certification;
         var dto = CoachCertificationMapping.ToDto(updated);

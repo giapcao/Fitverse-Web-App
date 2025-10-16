@@ -37,3 +37,4 @@ public sealed class ListAllCoachMediaQueryHandler : IQueryHandler<ListAllCoachMe
         return Result.Success(pagedResult);
     }
 }
+

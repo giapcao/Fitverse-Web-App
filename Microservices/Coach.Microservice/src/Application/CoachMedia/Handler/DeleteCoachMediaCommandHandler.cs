@@ -12,16 +12,13 @@ namespace Application.CoachMedia.Handler;
 public sealed class DeleteCoachMediaCommandHandler : ICommandHandler<DeleteCoachMediaCommand>
 {
     private readonly ICoachMediaRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public DeleteCoachMediaCommandHandler(
         ICoachMediaRepository repository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -39,8 +36,8 @@ public sealed class DeleteCoachMediaCommandHandler : ICommandHandler<DeleteCoach
         }
 
         _repository.Delete(medium);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
 }
+

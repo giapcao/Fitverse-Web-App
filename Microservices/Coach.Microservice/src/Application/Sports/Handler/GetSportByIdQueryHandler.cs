@@ -28,3 +28,4 @@ public sealed class GetSportByIdQueryHandler : IQueryHandler<GetSportByIdQuery, 
         return Result.Success(SportMapping.ToDto(sport));
     }
 }
+

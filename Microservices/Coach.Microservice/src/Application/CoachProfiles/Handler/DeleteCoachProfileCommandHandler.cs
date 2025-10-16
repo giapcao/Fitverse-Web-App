@@ -11,12 +11,9 @@ namespace Application.CoachProfiles.Handler;
 public sealed class DeleteCoachProfileCommandHandler : ICommandHandler<DeleteCoachProfileCommand>
 {
     private readonly ICoachProfileRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public DeleteCoachProfileCommandHandler(ICoachProfileRepository repository, IUnitOfWork unitOfWork)
+    public DeleteCoachProfileCommandHandler(ICoachProfileRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteCoachProfileCommand request, CancellationToken cancellationToken)
@@ -28,8 +25,8 @@ public sealed class DeleteCoachProfileCommandHandler : ICommandHandler<DeleteCoa
         }
 
         _repository.Delete(profile);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
 }
+

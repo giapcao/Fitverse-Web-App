@@ -33,3 +33,4 @@ public sealed class GetCoachProfileByIdQueryHandler : IQueryHandler<GetCoachProf
         return Result.Success(dto);
     }
 }
+

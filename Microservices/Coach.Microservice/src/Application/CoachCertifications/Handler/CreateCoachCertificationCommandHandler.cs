@@ -16,18 +16,15 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
 {
     private readonly ICoachCertificationRepository _certificationRepository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public CreateCoachCertificationCommandHandler(
         ICoachCertificationRepository certificationRepository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _certificationRepository = certificationRepository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -70,7 +67,6 @@ public sealed class CreateCoachCertificationCommandHandler : ICommandHandler<Cre
         };
 
         await _certificationRepository.AddAsync(certification, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _certificationRepository.GetDetailedByIdAsync(certification.Id, cancellationToken, asNoTracking: true) ?? certification;
         var dto = CoachCertificationMapping.ToDto(created);

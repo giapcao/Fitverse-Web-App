@@ -11,12 +11,9 @@ namespace Application.Sports.Handler;
 public sealed class DeleteSportCommandHandler : ICommandHandler<DeleteSportCommand>
 {
     private readonly ISportRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public DeleteSportCommandHandler(ISportRepository repository, IUnitOfWork unitOfWork)
+    public DeleteSportCommandHandler(ISportRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteSportCommand request, CancellationToken cancellationToken)
@@ -28,8 +25,8 @@ public sealed class DeleteSportCommandHandler : ICommandHandler<DeleteSportComma
         }
 
         _repository.Delete(sport);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
 }
+

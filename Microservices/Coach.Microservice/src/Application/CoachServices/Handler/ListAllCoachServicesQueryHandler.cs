@@ -33,3 +33,4 @@ public sealed class ListAllCoachServicesQueryHandler : IQueryHandler<ListAllCoac
         return Result.Success(pagedResult);
     }
 }
+

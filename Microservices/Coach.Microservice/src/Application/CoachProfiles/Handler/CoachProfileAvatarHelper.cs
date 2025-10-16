@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Common;
 using Application.Features;
 using SharedLibrary.Storage;
 
@@ -12,22 +13,21 @@ internal static class CoachProfileAvatarHelper
     public const string DefaultAvatar = "default_avt.jpg";
     private static readonly TimeSpan SignedUrlLifetime = TimeSpan.FromHours(1);
 
-    private static bool ShouldSign(string? url)
-    {
-        return !string.IsNullOrWhiteSpace(url)
-            && !url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(url, DefaultAvatar, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static async Task<CoachProfileDto> WithSignedAvatarAsync(CoachProfileDto dto, IFileStorageService storage, CancellationToken cancellationToken)
     {
-        if (!ShouldSign(dto.AvatarUrl))
+        if (string.IsNullOrWhiteSpace(dto.AvatarUrl) || string.Equals(dto.AvatarUrl, DefaultAvatar, StringComparison.OrdinalIgnoreCase))
         {
             var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
             return dto with { AvatarDownloadUrl = downloadUrl };
         }
 
-        var signedUrls = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
+        if (!StorageUrlResolver.TryGetSignableInput(dto.AvatarUrl, out var signable))
+        {
+            var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
+            return dto with { AvatarDownloadUrl = downloadUrl };
+        }
+
+        var signedUrls = await storage.GetFileUrlAsync(signable, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
         return dto with
         {
             AvatarUrl = signedUrls.InlineUrl,
@@ -53,13 +53,19 @@ internal static class CoachProfileAvatarHelper
 
     public static async Task<CoachProfileSummaryDto> WithSignedAvatarAsync(CoachProfileSummaryDto dto, IFileStorageService storage, CancellationToken cancellationToken)
     {
-        if (!ShouldSign(dto.AvatarUrl))
+        if (string.IsNullOrWhiteSpace(dto.AvatarUrl) || string.Equals(dto.AvatarUrl, DefaultAvatar, StringComparison.OrdinalIgnoreCase))
         {
             var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
             return dto with { AvatarDownloadUrl = downloadUrl };
         }
 
-        var signedUrls = await storage.GetFileUrlAsync(dto.AvatarUrl!, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
+        if (!StorageUrlResolver.TryGetSignableInput(dto.AvatarUrl, out var signable))
+        {
+            var downloadUrl = dto.AvatarDownloadUrl ?? dto.AvatarUrl;
+            return dto with { AvatarDownloadUrl = downloadUrl };
+        }
+
+        var signedUrls = await storage.GetFileUrlAsync(signable, SignedUrlLifetime, cancellationToken).ConfigureAwait(false);
         return dto with
         {
             AvatarUrl = signedUrls.InlineUrl,

@@ -84,7 +84,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5015
-      ConnectionStrings__BookingDatabase: Host=postgres;Port=5432;Database=fitverse_booking;Username=YOUR_USERNAME;Password=YOUR_PASSWORD
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=fitverse_booking;Username=YOUR_USERNAME;Password=YOUR_PASSWORD
     depends_on:
       rabbit-mq:
         condition: service_healthy
@@ -106,11 +106,8 @@ services:
       USER_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
       GUEST_MICROSERVICE_HOST: YOUR_MICROSERVICE_HOST
       GUEST_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
-<<<<<<< HEAD
       BOOKING_MICROSERVICE_HOST: YOUR_MICROSERVICE_HOST
       BOOKING_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
-=======
->>>>>>> 03f2e5c65f1b04e71fe9a5133e1cf0f260270fa9
       AwsS3__AccessKey: YOUR_AWS_ACCESS_KEY
       AwsS3__SecretKey: YOUR_AWS_SECRET_KEY
       AwsS3__BucketName: YOUR_BUCKET_NAME
