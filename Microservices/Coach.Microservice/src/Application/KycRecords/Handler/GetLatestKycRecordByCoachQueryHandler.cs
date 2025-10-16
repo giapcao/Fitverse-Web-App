@@ -28,3 +28,4 @@ public sealed class GetLatestKycRecordByCoachQueryHandler : IQueryHandler<GetLat
         return Result.Success(KycRecordMapping.ToDto(record));
     }
 }
+

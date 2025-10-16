@@ -12,12 +12,9 @@ namespace Application.Sports.Handler;
 public sealed class UpdateSportCommandHandler : ICommandHandler<UpdateSportCommand, SportDto>
 {
     private readonly ISportRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateSportCommandHandler(ISportRepository repository, IUnitOfWork unitOfWork)
+    public UpdateSportCommandHandler(ISportRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<SportDto>> Handle(UpdateSportCommand request, CancellationToken cancellationToken)
@@ -38,9 +35,9 @@ public sealed class UpdateSportCommandHandler : ICommandHandler<UpdateSportComma
             sport.Description = request.Description;
         }
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetByIdAsync(sport.Id, cancellationToken, asNoTracking: true) ?? sport;
         return Result.Success(SportMapping.ToDto(updated));
     }
 }
+

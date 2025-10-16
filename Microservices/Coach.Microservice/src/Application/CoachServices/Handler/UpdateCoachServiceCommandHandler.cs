@@ -14,13 +14,10 @@ public sealed class UpdateCoachServiceCommandHandler : ICommandHandler<UpdateCoa
 {
     private readonly ICoachServiceRepository _repository;
     private readonly ISportRepository _sportRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateCoachServiceCommandHandler(ICoachServiceRepository repository, ISportRepository sportRepository, IUnitOfWork unitOfWork)
+    public UpdateCoachServiceCommandHandler(ICoachServiceRepository repository, ISportRepository sportRepository)
     {
         _repository = repository;
         _sportRepository = sportRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<CoachServiceDto>> Handle(UpdateCoachServiceCommand request, CancellationToken cancellationToken)
@@ -67,9 +64,9 @@ public sealed class UpdateCoachServiceCommandHandler : ICommandHandler<UpdateCoa
 
         service.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetDetailedByIdAsync(service.Id, cancellationToken, asNoTracking: true) ?? service;
         return Result.Success(CoachServiceMapping.ToDto(updated));
     }
 }
+

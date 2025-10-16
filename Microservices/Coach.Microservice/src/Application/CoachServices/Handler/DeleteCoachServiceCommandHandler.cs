@@ -11,12 +11,9 @@ namespace Application.CoachServices.Handler;
 public sealed class DeleteCoachServiceCommandHandler : ICommandHandler<DeleteCoachServiceCommand>
 {
     private readonly ICoachServiceRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public DeleteCoachServiceCommandHandler(ICoachServiceRepository repository, IUnitOfWork unitOfWork)
+    public DeleteCoachServiceCommandHandler(ICoachServiceRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteCoachServiceCommand request, CancellationToken cancellationToken)
@@ -28,8 +25,8 @@ public sealed class DeleteCoachServiceCommandHandler : ICommandHandler<DeleteCoa
         }
 
         _repository.Delete(service);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
 }
+

@@ -16,18 +16,14 @@ public sealed class CreateCoachServiceCommandHandler : ICommandHandler<CreateCoa
     private readonly ICoachServiceRepository _serviceRepository;
     private readonly ICoachProfileRepository _profileRepository;
     private readonly ISportRepository _sportRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
     public CreateCoachServiceCommandHandler(
         ICoachServiceRepository serviceRepository,
         ICoachProfileRepository profileRepository,
-        ISportRepository sportRepository,
-        IUnitOfWork unitOfWork)
+        ISportRepository sportRepository)
     {
         _serviceRepository = serviceRepository;
         _profileRepository = profileRepository;
         _sportRepository = sportRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<CoachServiceDto>> Handle(CreateCoachServiceCommand request, CancellationToken cancellationToken)
@@ -63,9 +59,9 @@ public sealed class CreateCoachServiceCommandHandler : ICommandHandler<CreateCoa
         };
 
         await _serviceRepository.AddAsync(service, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _serviceRepository.GetDetailedByIdAsync(service.Id, cancellationToken, asNoTracking: true) ?? service;
         return Result.Success(CoachServiceMapping.ToDto(created));
     }
 }
+

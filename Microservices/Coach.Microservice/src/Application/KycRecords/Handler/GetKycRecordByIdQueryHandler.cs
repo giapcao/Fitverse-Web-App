@@ -39,3 +39,4 @@ public sealed class GetKycRecordByIdQueryHandler : IQueryHandler<GetKycRecordByI
         return Result.Success(dto);
     }
 }
+

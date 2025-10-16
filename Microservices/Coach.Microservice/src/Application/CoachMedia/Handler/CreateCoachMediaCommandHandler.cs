@@ -16,18 +16,15 @@ public sealed class CreateCoachMediaCommandHandler : ICommandHandler<CreateCoach
 {
     private readonly ICoachMediaRepository _mediaRepository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public CreateCoachMediaCommandHandler(
         ICoachMediaRepository mediaRepository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _mediaRepository = mediaRepository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -73,7 +70,6 @@ public sealed class CreateCoachMediaCommandHandler : ICommandHandler<CreateCoach
         };
 
         await _mediaRepository.AddAsync(medium, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _mediaRepository.GetDetailedByIdAsync(medium.Id, cancellationToken, asNoTracking: true) ?? medium;
         var dto = CoachMediaMapping.ToDto(created);
@@ -81,3 +77,4 @@ public sealed class CreateCoachMediaCommandHandler : ICommandHandler<CreateCoach
         return Result.Success(dto);
     }
 }
+

@@ -28,3 +28,4 @@ public sealed class GetCoachServiceByIdQueryHandler : IQueryHandler<GetCoachServ
         return Result.Success(CoachServiceMapping.ToDto(service));
     }
 }
+

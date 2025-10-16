@@ -11,12 +11,9 @@ namespace Application.KycRecords.Handler;
 public sealed class DeleteKycRecordCommandHandler : ICommandHandler<DeleteKycRecordCommand>
 {
     private readonly IKycRecordRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public DeleteKycRecordCommandHandler(IKycRecordRepository repository, IUnitOfWork unitOfWork)
+    public DeleteKycRecordCommandHandler(IKycRecordRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteKycRecordCommand request, CancellationToken cancellationToken)
@@ -28,8 +25,8 @@ public sealed class DeleteKycRecordCommandHandler : ICommandHandler<DeleteKycRec
         }
 
         _repository.Delete(record);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
 }
+

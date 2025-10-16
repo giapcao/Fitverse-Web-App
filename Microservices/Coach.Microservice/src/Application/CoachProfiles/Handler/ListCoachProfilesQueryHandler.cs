@@ -87,3 +87,4 @@ public sealed class ListCoachProfilesQueryHandler : IQueryHandler<ListCoachProfi
         return Result.Success(pagedResult);
     }
 }
+
