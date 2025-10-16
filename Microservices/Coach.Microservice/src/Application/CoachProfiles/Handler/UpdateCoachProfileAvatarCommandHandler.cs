@@ -14,17 +14,14 @@ namespace Application.CoachProfiles.Handler;
 public sealed class UpdateCoachProfileAvatarCommandHandler : ICommandHandler<UpdateCoachProfileAvatarCommand, CoachProfileDto>
 {
     private readonly ICoachProfileRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
     private const string DefaultAvatar = CoachProfileAvatarHelper.DefaultAvatar;
 
     public UpdateCoachProfileAvatarCommandHandler(
         ICoachProfileRepository repository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -59,7 +56,6 @@ public sealed class UpdateCoachProfileAvatarCommandHandler : ICommandHandler<Upd
         profile.AvatarUrl = uploadResult.Key;
 
         profile.UpdatedAt = DateTime.UtcNow;
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
         var dto = CoachProfileMapping.ToDto(updated);
@@ -67,3 +63,4 @@ public sealed class UpdateCoachProfileAvatarCommandHandler : ICommandHandler<Upd
         return Result.Success(dto);
     }
 }
+

@@ -23,8 +23,10 @@ public static class DependencyInjection
         services.AddScoped<IMapper, ServiceMapper>();
 
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
         services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
 
         return services;
     }
 }
+

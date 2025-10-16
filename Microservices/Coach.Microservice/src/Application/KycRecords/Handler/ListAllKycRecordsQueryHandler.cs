@@ -46,3 +46,4 @@ public sealed class ListAllKycRecordsQueryHandler : IQueryHandler<ListAllKycReco
         return Result.Success(pagedResult);
     }
 }
+

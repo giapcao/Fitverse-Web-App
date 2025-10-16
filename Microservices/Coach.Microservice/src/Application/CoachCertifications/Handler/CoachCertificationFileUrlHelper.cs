@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Common;
 using Application.Features;
 using SharedLibrary.Storage;
 
@@ -16,19 +17,14 @@ internal static class CoachCertificationFileUrlHelper
         IFileStorageService fileStorageService,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(dto.FileUrl))
-        {
-            return dto;
-        }
-
-        if (IsAbsoluteUrl(dto.FileUrl))
+        if (!StorageUrlResolver.TryGetSignableInput(dto.FileUrl, out var signable))
         {
             var downloadUrl = dto.FileDownloadUrl ?? dto.FileUrl;
             return dto with { FileDownloadUrl = downloadUrl };
         }
 
         var signedUrls = await fileStorageService
-            .GetFileUrlAsync(dto.FileUrl, SignedUrlLifetime, cancellationToken)
+            .GetFileUrlAsync(signable, SignedUrlLifetime, cancellationToken)
             .ConfigureAwait(false);
 
         return dto with
@@ -55,10 +51,5 @@ internal static class CoachCertificationFileUrlHelper
         }
 
         return result;
-    }
-
-    private static bool IsAbsoluteUrl(string value)
-    {
-        return Uri.TryCreate(value, UriKind.Absolute, out _);
     }
 }

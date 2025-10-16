@@ -46,3 +46,4 @@ public sealed class ListCoachServicesQueryHandler : IQueryHandler<ListCoachServi
         return Result.Success(pagedResult);
     }
 }
+

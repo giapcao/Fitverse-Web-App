@@ -14,16 +14,13 @@ namespace Application.CoachMedia.Handler;
 public sealed class UpdateCoachMediaCommandHandler : ICommandHandler<UpdateCoachMediaCommand, CoachMediaDto>
 {
     private readonly ICoachMediaRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public UpdateCoachMediaCommandHandler(
         ICoachMediaRepository repository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -78,7 +75,6 @@ public sealed class UpdateCoachMediaCommandHandler : ICommandHandler<UpdateCoach
 
         medium.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await _repository.GetDetailedByIdAsync(medium.Id, cancellationToken, asNoTracking: true) ?? medium;
         var dto = CoachMediaMapping.ToDto(updated);
@@ -86,3 +82,4 @@ public sealed class UpdateCoachMediaCommandHandler : ICommandHandler<UpdateCoach
         return Result.Success(dto);
     }
 }
+

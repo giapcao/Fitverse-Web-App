@@ -59,7 +59,6 @@ public class AuthenticationRepository : Repository<AppUser>, IAuthenticationRepo
 
         user.PasswordHash = newHash;
         user.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync(ct);
     }
 
     public async Task<IReadOnlyList<AppUser>> GetAllDetailedAsync(CancellationToken ct)

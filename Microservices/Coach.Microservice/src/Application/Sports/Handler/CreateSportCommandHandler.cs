@@ -14,12 +14,9 @@ namespace Application.Sports.Handler;
 public sealed class CreateSportCommandHandler : ICommandHandler<CreateSportCommand, SportDto>
 {
     private readonly ISportRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
-
-    public CreateSportCommandHandler(ISportRepository repository, IUnitOfWork unitOfWork)
+    public CreateSportCommandHandler(ISportRepository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<SportDto>> Handle(CreateSportCommand request, CancellationToken cancellationToken)
@@ -32,9 +29,9 @@ public sealed class CreateSportCommandHandler : ICommandHandler<CreateSportComma
         };
 
         await _repository.AddAsync(sport, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _repository.GetByIdAsync(sport.Id, cancellationToken, asNoTracking: true) ?? sport;
         return Result.Success(SportMapping.ToDto(created));
     }
 }
+

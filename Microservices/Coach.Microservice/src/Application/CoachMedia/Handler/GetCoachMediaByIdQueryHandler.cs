@@ -33,3 +33,4 @@ public sealed class GetCoachMediaByIdQueryHandler : IQueryHandler<GetCoachMediaB
         return Result.Success(dto);
     }
 }
+
