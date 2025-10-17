@@ -29,7 +29,7 @@ public sealed class GetCoachProfileByIdQueryHandler : IQueryHandler<GetCoachProf
         }
 
         var dto = CoachProfileMapping.ToDto(profile);
-        dto = await CoachProfileAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, cancellationToken);
+        dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
         return Result.Success(dto);
     }
 }

@@ -63,8 +63,7 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
 
         var created = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
         var dto = CoachProfileMapping.ToDto(created);
-        dto = await CoachProfileAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, cancellationToken);
+        dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
         return Result.Success(dto);
     }
 }
-

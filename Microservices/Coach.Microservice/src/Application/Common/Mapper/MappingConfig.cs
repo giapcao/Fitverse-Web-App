@@ -18,7 +18,7 @@ public static class MappingConfig
         config.NewConfig<CoachProfile, CoachProfileDto>()
             .Map(dest => dest.CoachId, src => src.UserId)
             .Map(dest => dest.Media, src => src.CoachMedia)
-            .Map(dest => dest.KycRecords, src => src.KycRecords)
+            .Map(dest => dest.Certifications, src => src.CoachCertifications)
             .Map(dest => dest.Services, src => src.CoachServices)
             .Map(dest => dest.Sports, src => src.Sports);
         config.NewConfig<CoachService, CoachServiceDto>();

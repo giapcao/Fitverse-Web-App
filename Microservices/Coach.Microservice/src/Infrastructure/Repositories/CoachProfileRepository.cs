@@ -30,7 +30,7 @@ public class CoachProfileRepository : Repository<CoachProfile>, ICoachProfileRep
         var query = _context.CoachProfiles
             .Include(p => p.CoachMedia)
             .Include(p => p.CoachServices)
-            .Include(p => p.KycRecords)
+            .Include(p => p.CoachCertifications)
             .Include(p => p.Sports)
             .Where(p => p.UserId == userId);
 
@@ -47,7 +47,7 @@ public class CoachProfileRepository : Repository<CoachProfile>, ICoachProfileRep
         return await _context.CoachProfiles
             .Include(p => p.CoachMedia)
             .Include(p => p.CoachServices)
-            .Include(p => p.KycRecords)
+            .Include(p => p.CoachCertifications)
             .Include(p => p.Sports)
             .AsNoTracking()
             .ToListAsync(ct);
