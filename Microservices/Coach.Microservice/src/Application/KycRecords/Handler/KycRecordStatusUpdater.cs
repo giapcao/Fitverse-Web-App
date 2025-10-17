@@ -14,7 +14,6 @@ internal static class KycRecordStatusUpdater
     public static async Task<Result<KycRecordDto>> UpdateAsync(
         IKycRecordRepository recordRepository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork,
         Guid recordId,
         KycStatus targetStatus,
         string? adminNote,
@@ -51,8 +50,6 @@ internal static class KycRecordStatusUpdater
         profile.KycStatus = record.Status;
         profile.KycNote = record.AdminNote;
         profile.UpdatedAt = DateTime.UtcNow;
-
-        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var updated = await recordRepository.GetDetailedByIdAsync(record.Id, cancellationToken, asNoTracking: true) ?? record;
         return Result.Success(KycRecordMapping.ToDto(updated));

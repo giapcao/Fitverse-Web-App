@@ -33,3 +33,4 @@ public sealed class ListSportsQueryHandler : IQueryHandler<ListSportsQuery, Page
         return Result.Success(pagedResult);
     }
 }
+

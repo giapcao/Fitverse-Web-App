@@ -32,4 +32,4 @@ public record CoachProfileDto(
     IReadOnlyCollection<CoachProfileSportDto> Sports,
     IReadOnlyCollection<CoachMediaDto> Media,
     IReadOnlyCollection<CoachServiceDto> Services,
-    IReadOnlyCollection<KycRecordDto> KycRecords);
+    IReadOnlyCollection<CoachCertificationDto> Certifications);

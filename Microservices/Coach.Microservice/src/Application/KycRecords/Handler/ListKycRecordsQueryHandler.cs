@@ -55,3 +55,4 @@ public sealed class ListKycRecordsQueryHandler : IQueryHandler<ListKycRecordsQue
         return Result.Success(pagedResult);
     }
 }
+

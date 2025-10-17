@@ -77,7 +77,7 @@ public sealed class ListCoachProfilesQueryHandler : IQueryHandler<ListCoachProfi
         }
 
         var dtoList = prioritized.Select(CoachProfileMapping.ToDto).ToList();
-        var signedList = await CoachProfileAvatarHelper.WithSignedAvatarsAsync(dtoList, _fileStorageService, cancellationToken).ConfigureAwait(false);
+        var signedList = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dtoList, _fileStorageService, cancellationToken).ConfigureAwait(false);
         var pagedResult = PagedResult<CoachProfileDto>.Create(signedList, request.PageNumber, request.PageSize);
         if (pagedResult.IsFailure)
         {
@@ -87,3 +87,4 @@ public sealed class ListCoachProfilesQueryHandler : IQueryHandler<ListCoachProfi
         return Result.Success(pagedResult);
     }
 }
+

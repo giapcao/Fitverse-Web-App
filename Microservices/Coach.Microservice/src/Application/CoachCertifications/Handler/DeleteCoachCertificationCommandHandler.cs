@@ -12,16 +12,13 @@ namespace Application.CoachCertifications.Handler;
 public sealed class DeleteCoachCertificationCommandHandler : ICommandHandler<DeleteCoachCertificationCommand>
 {
     private readonly ICoachCertificationRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
 
     public DeleteCoachCertificationCommandHandler(
         ICoachCertificationRepository repository,
-        IUnitOfWork unitOfWork,
         IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
         _fileStorageService = fileStorageService;
     }
 
@@ -39,7 +36,6 @@ public sealed class DeleteCoachCertificationCommandHandler : ICommandHandler<Del
         }
 
         _repository.Delete(certification);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

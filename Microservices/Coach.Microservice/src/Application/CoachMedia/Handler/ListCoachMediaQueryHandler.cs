@@ -54,3 +54,4 @@ public sealed class ListCoachMediaQueryHandler : IQueryHandler<ListCoachMediaQue
         return Result.Success(pagedResult);
     }
 }
+

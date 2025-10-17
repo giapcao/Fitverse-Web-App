@@ -12,10 +12,12 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using DotNetEnv;
 
 var builder = WebApplication.CreateBuilder(args);
 var environment = builder.Environment;
 
+Env.Load();
 
 builder.Host.UseSerilog((context, loggerConfiguration) =>
     loggerConfiguration.ReadFrom.Configuration(context.Configuration));

@@ -84,7 +84,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5015
-      ConnectionStrings__BookingDatabase: Host=postgres;Port=5432;Database=fitverse_booking;Username=YOUR_USERNAME;Password=YOUR_PASSWORD
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=fitverse_booking;Username=YOUR_USERNAME;Password=YOUR_PASSWORD
     depends_on:
       rabbit-mq:
         condition: service_healthy

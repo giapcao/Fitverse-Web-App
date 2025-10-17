@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using CoachCertificationMapper = Application.CoachCertifications.Handler.CoachCertificationMapping;
 using Application.Features;
 using Domain.Persistence.Models;
 
@@ -25,7 +26,9 @@ internal static class CoachProfileMapping
     {
         var media = profile.CoachMedia?.Select(CoachMediaMapping.ToDto).ToArray() ?? Array.Empty<CoachMediaDto>();
         var services = profile.CoachServices?.Select(CoachServiceMapping.ToDto).ToArray() ?? Array.Empty<CoachServiceDto>();
-        var kycRecords = profile.KycRecords?.Select(KycRecordMapping.ToDto).ToArray() ?? Array.Empty<KycRecordDto>();
+        var certifications = profile.CoachCertifications?
+            .Select(CoachCertificationMapper.ToDto)
+            .ToArray() ?? Array.Empty<CoachCertificationDto>();
         var sports = profile.Sports?
             .Select(s => new CoachProfileSportDto(s.Id, s.DisplayName))
             .ToArray() ?? Array.Empty<CoachProfileSportDto>();
@@ -58,7 +61,7 @@ internal static class CoachProfileMapping
             sports,
             media,
             services,
-            kycRecords);
+            certifications);
     }
 }
 
@@ -100,22 +103,5 @@ internal static class CoachServiceMapping
             service.IsActive,
             service.CreatedAt,
             service.UpdatedAt);
-    }
-}
-
-internal static class KycRecordMapping
-{
-    public static KycRecordDto ToDto(KycRecord record)
-    {
-        return new KycRecordDto(
-            record.Id,
-            record.CoachId,
-            record.IdDocumentUrl,
-            record.AdminNote,
-            record.Status,
-            record.SubmittedAt,
-            record.ReviewedAt,
-            record.ReviewerId,
-            record.Coach is null ? null : CoachProfileMapping.ToSummaryDto(record.Coach));
     }
 }

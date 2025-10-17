@@ -16,17 +16,14 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
 {
     private readonly IKycRecordRepository _kycRepository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
     private const string DefaultAdminNote = "kyc_coach_profile";
 
     public CreateKycRecordCommandHandler(
         IKycRecordRepository kycRepository,
-        ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork)
+        ICoachProfileRepository profileRepository)
     {
         _kycRepository = kycRepository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<KycRecordDto>> Handle(CreateKycRecordCommand request, CancellationToken cancellationToken)
@@ -53,9 +50,9 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
         profile.UpdatedAt = DateTime.UtcNow;
 
         await _kycRepository.AddAsync(record, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _kycRepository.GetDetailedByIdAsync(record.Id, cancellationToken, asNoTracking: true) ?? record;
         return Result.Success(KycRecordMapping.ToDto(created));
     }
 }
+
