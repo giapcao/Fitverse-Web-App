@@ -5,6 +5,7 @@ namespace Application.Features;
 public record CoachProfileSummaryDto(
     Guid CoachId,
     string? Fullname,
+    string? Email,
     string? AvatarUrl,
     string? AvatarDownloadUrl,
     string? OperatingLocation,

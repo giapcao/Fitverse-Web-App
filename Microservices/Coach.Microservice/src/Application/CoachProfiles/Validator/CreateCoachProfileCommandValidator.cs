@@ -18,6 +18,9 @@ public sealed class CreateCoachProfileCommandValidator : AbstractValidator<Creat
     public CreateCoachProfileCommandValidator()
     {
         RuleFor(x => x.CoachId).NotEmpty();
+        RuleFor(x => x.Email)
+            .NotEmpty()
+            .EmailAddress();
         RuleFor(x => x.YearsExperience).GreaterThanOrEqualTo(0).When(x => x.YearsExperience.HasValue);
         RuleFor(x => x.BasePriceVnd).GreaterThanOrEqualTo(0).When(x => x.BasePriceVnd.HasValue);
         RuleFor(x => x.ServiceRadiusKm).GreaterThan(0).When(x => x.ServiceRadiusKm.HasValue);

@@ -33,10 +33,12 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         }
 
         var utcNow = DateTime.UtcNow;
+        var normalizedEmail = request.Email.Trim();
         var profile = new CoachProfile
         {
             UserId = request.CoachId,
             Fullname = request.Fullname,
+            Email = normalizedEmail,
             Bio = request.Bio,
             YearsExperience = request.YearsExperience,
             BasePriceVnd = request.BasePriceVnd,

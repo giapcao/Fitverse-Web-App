@@ -9,6 +9,7 @@ using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.KycRecords.Handler;
 
@@ -16,14 +17,17 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
 {
     private readonly IKycRecordRepository _kycRepository;
     private readonly ICoachProfileRepository _profileRepository;
+    private readonly IFileStorageService _fileStorageService;
     private const string DefaultAdminNote = "kyc_coach_profile";
 
     public CreateKycRecordCommandHandler(
         IKycRecordRepository kycRepository,
-        ICoachProfileRepository profileRepository)
+        ICoachProfileRepository profileRepository,
+        IFileStorageService fileStorageService)
     {
         _kycRepository = kycRepository;
         _profileRepository = profileRepository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<KycRecordDto>> Handle(CreateKycRecordCommand request, CancellationToken cancellationToken)
@@ -34,7 +38,9 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
             return Result.Failure<KycRecordDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
-        var adminNote = string.IsNullOrWhiteSpace(request.AdminNote) ? DefaultAdminNote : request.AdminNote;
+        var adminNote = string.IsNullOrWhiteSpace(request.AdminNote)
+            ? DefaultAdminNote
+            : request.AdminNote.Trim();
 
         var record = new KycRecord
         {
@@ -52,7 +58,7 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
         await _kycRepository.AddAsync(record, cancellationToken);
 
         var created = await _kycRepository.GetDetailedByIdAsync(record.Id, cancellationToken, asNoTracking: true) ?? record;
-        return Result.Success(KycRecordMapping.ToDto(created));
+        var dto = await KycRecordMapping.ToDtoWithSignedCoachAsync(created, _fileStorageService, cancellationToken).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }
-

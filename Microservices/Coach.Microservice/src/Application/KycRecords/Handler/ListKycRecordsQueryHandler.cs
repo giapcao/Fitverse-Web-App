@@ -1,10 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.Features;
-using Application.CoachProfiles.Handler;
 using Application.KycRecords.Query;
 using Domain.IRepositories;
 using SharedLibrary.Common.ResponseModel;
@@ -35,16 +33,9 @@ public sealed class ListKycRecordsQueryHandler : IQueryHandler<ListKycRecordsQue
             records = await _repository.GetAllDetailedAsync(cancellationToken);
         }
 
-        var dtoList = records.Select(KycRecordMapping.ToDto).ToList();
-        for (var i = 0; i < dtoList.Count; i++)
-        {
-            var coach = dtoList[i].Coach;
-            if (coach is not null)
-            {
-                var signedCoach = await CoachProfileAvatarHelper.WithSignedAvatarAsync(coach, _fileStorageService, cancellationToken).ConfigureAwait(false);
-                dtoList[i] = dtoList[i] with { Coach = signedCoach };
-            }
-        }
+        var dtoList = await KycRecordMapping
+            .ToDtoListWithSignedCoachAsync(records, _fileStorageService, cancellationToken)
+            .ConfigureAwait(false);
 
         var pagedResult = PagedResult<KycRecordDto>.Create(dtoList, request.PageNumber, request.PageSize);
         if (pagedResult.IsFailure)

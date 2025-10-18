@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.Features;
-using Application.CoachProfiles.Handler;
 using Application.KycRecords.Query;
 using Domain.IRepositories;
 using SharedLibrary.Common.ResponseModel;
@@ -29,14 +28,7 @@ public sealed class GetKycRecordByIdQueryHandler : IQueryHandler<GetKycRecordByI
             return Result.Failure<KycRecordDto>(new Error("KycRecord.NotFound", $"KYC record {request.RecordId} was not found."));
         }
 
-        var dto = KycRecordMapping.ToDto(record);
-        if (dto.Coach is not null)
-        {
-            var signedCoach = await CoachProfileAvatarHelper.WithSignedAvatarAsync(dto.Coach, _fileStorageService, cancellationToken).ConfigureAwait(false);
-            dto = dto with { Coach = signedCoach };
-        }
-
+        var dto = await KycRecordMapping.ToDtoWithSignedCoachAsync(record, _fileStorageService, cancellationToken).ConfigureAwait(false);
         return Result.Success(dto);
     }
 }
-

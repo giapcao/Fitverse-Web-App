@@ -13,6 +13,7 @@ internal static class CoachProfileMapping
         return new CoachProfileSummaryDto(
             profile.UserId,
             profile.Fullname,
+            profile.Email,
             profile.AvatarUrl,
             profile.AvatarUrl,
             profile.OperatingLocation,
@@ -36,6 +37,7 @@ internal static class CoachProfileMapping
         return new CoachProfileDto(
             profile.UserId,
             profile.Fullname,
+            profile.Email,
             profile.Bio,
             profile.YearsExperience,
             profile.BasePriceVnd,

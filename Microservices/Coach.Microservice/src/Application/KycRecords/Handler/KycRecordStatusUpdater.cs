@@ -11,6 +11,9 @@ namespace Application.KycRecords.Handler;
 
 internal static class KycRecordStatusUpdater
 {
+    private const string ApprovedDefaultNote = "This record is approve";
+    private const string RejectedDefaultNote = "This record is rejected";
+
     public static async Task<Result<KycRecordDto>> UpdateAsync(
         IKycRecordRepository recordRepository,
         ICoachProfileRepository profileRepository,
@@ -42,16 +45,31 @@ internal static class KycRecordStatusUpdater
             return Result.Failure<KycRecordDto>(new Error("CoachProfile.NotFound", $"Coach profile {record.CoachId} was not found."));
         }
 
+        string? effectiveAdminNote;
+        if (string.IsNullOrWhiteSpace(adminNote))
+        {
+            effectiveAdminNote = targetStatus switch
+            {
+                KycStatus.Approved => ApprovedDefaultNote,
+                KycStatus.Rejected => RejectedDefaultNote,
+                _ => null
+            };
+        }
+        else
+        {
+            effectiveAdminNote = adminNote.Trim();
+        }
+
         record.Status = targetStatus;
-        record.AdminNote = adminNote;
+        record.AdminNote = effectiveAdminNote;
         record.ReviewerId = reviewerId;
         record.ReviewedAt = DateTime.UtcNow;
 
         profile.KycStatus = record.Status;
         profile.KycNote = record.AdminNote;
         profile.UpdatedAt = DateTime.UtcNow;
+        record.Coach = profile;
 
-        var updated = await recordRepository.GetDetailedByIdAsync(record.Id, cancellationToken, asNoTracking: true) ?? record;
-        return Result.Success(KycRecordMapping.ToDto(updated));
+        return Result.Success(KycRecordMapping.ToDto(record));
     }
 }
