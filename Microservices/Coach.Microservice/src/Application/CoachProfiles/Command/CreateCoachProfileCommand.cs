@@ -7,6 +7,7 @@ namespace Application.CoachProfiles.Command;
 public sealed record CreateCoachProfileCommand(
     Guid CoachId,
     string? Fullname,
+    string Email,
     string? Bio,
     int? YearsExperience,
     long? BasePriceVnd,

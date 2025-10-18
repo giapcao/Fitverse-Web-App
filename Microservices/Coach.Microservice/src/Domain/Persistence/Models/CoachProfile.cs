@@ -82,6 +82,8 @@ public partial class CoachProfile
     /// Họ và tên
     /// </summary>
     public string? Fullname { get; set; }
+    
+    public string? Email { get; set; }
 
     public virtual ICollection<CoachCertification> CoachCertifications { get; set; } = new List<CoachCertification>();
 

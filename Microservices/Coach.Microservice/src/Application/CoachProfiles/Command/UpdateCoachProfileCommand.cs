@@ -8,6 +8,7 @@ namespace Application.CoachProfiles.Command;
 public sealed record UpdateCoachProfileCommand(
     Guid CoachId,
     string? Fullname,
+    string? Email,
     string? Bio,
     int? YearsExperience,
     long? BasePriceVnd,

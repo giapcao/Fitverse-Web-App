@@ -143,6 +143,9 @@ public partial class FitverseCoachDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Email)
+                .HasColumnType("citext")
+                .HasColumnName("email");
             entity.Property(e => e.Fullname)
                 .HasComment("Họ và tên")
                 .HasColumnName("fullname");

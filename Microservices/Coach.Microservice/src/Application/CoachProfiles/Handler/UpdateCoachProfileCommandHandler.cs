@@ -31,6 +31,9 @@ public sealed class UpdateCoachProfileCommandHandler : ICommandHandler<UpdateCoa
         }
 
         profile.Fullname = request.Fullname ?? profile.Fullname;
+        profile.Email = request.Email is null
+            ? profile.Email
+            : (string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim());
         profile.Bio = request.Bio ?? profile.Bio;
         profile.YearsExperience = request.YearsExperience ?? profile.YearsExperience;
         profile.BasePriceVnd = request.BasePriceVnd ?? profile.BasePriceVnd;

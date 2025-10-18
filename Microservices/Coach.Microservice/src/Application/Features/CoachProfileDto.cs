@@ -7,6 +7,7 @@ namespace Application.Features;
 public record CoachProfileDto(
     Guid CoachId,
     string? Fullname,
+    string? Email,
     string? Bio,
     int? YearsExperience,
     long? BasePriceVnd,
