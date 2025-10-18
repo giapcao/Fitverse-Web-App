@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -8,11 +9,18 @@ using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Payments.VNPay.Queries;
 
-public sealed record VNPayReturnView(string HtmlContent, bool SignatureValid, bool IsSuccess, string ResponseCode, string? TransactionReference);
+public sealed record VNPayReturnView(
+    string HtmlContent,
+    bool SignatureValid,
+    bool IsSuccess,
+    string ResponseCode,
+    string? TransactionReference,
+    Guid? UserId);
 
 public sealed record GetVNPayReturnViewQuery(
     IReadOnlyDictionary<string, string> QueryParameters,
-    VNPayConfiguration Configuration) : IQuery<VNPayReturnView>;
+    VNPayConfiguration Configuration,
+    Guid? UserIdOverride) : IQuery<VNPayReturnView>;
 
 internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayReturnViewQuery, VNPayReturnView>
 {
@@ -42,6 +50,7 @@ internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
         var amount = parameters.TryGetValue("vnp_Amount", out var amountValue) ? amountValue : string.Empty;
 
         var txnRef = ResolveTransactionReference(parameters);
+        var userId = request.UserIdOverride ?? ResolveUserId(parameters);
         var isSuccess = signatureValid && VnPayHelper.IsSuccess(responseCode, transactionStatus);
 
         var title = isSuccess ? "Payment Successful" : "Payment Failed";
@@ -84,6 +93,13 @@ internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
         builder.Append("            <dd>")
             .Append(WebUtility.HtmlEncode(amount))
             .AppendLine("</dd>");
+        if (userId.HasValue)
+        {
+            builder.AppendLine("            <dt>User Id:</dt>");
+            builder.Append("            <dd>")
+                .Append(WebUtility.HtmlEncode(userId.Value.ToString()))
+                .AppendLine("</dd>");
+        }
         builder.AppendLine("            <dt>Response Code:</dt>");
         builder.Append("            <dd>")
             .Append(WebUtility.HtmlEncode(responseCode))
@@ -98,7 +114,7 @@ internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
         builder.AppendLine("</html>");
 
         var html = builder.ToString();
-        var view = new VNPayReturnView(html, signatureValid, isSuccess, responseCode, txnRef);
+        var view = new VNPayReturnView(html, signatureValid, isSuccess, responseCode, txnRef, userId);
 
         return Task.FromResult(Result.Success(view));
     }
@@ -125,5 +141,16 @@ internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayRet
         }
 
         return string.Empty;
+    }
+
+    private static Guid? ResolveUserId(IReadOnlyDictionary<string, string> parameters)
+    {
+        if (parameters.TryGetValue("userId", out var userIdValue) &&
+            Guid.TryParse(userIdValue, out var userId))
+        {
+            return userId;
+        }
+
+        return null;
     }
 }

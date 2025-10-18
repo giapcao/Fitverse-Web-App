@@ -1,7 +1,12 @@
+using System;
+using System.Linq;
+using Application.Payments.Returns;
 using Application.Payments.VNPay;
-using Application.Payments.VNPay.Commands;
 using Application.Payments.VNPay.Queries;
+using Application.VNPay.Commands;
+using Application.VNPay.Queries;
 using Asp.Versioning;
+using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +32,7 @@ public sealed class VnPayController : ControllerBase
     }
 
     [HttpGet("checkout/vnpay")]
-    public async Task<IActionResult> StartCheckout([FromQuery] long amountVnd, [FromQuery] string orderId, CancellationToken cancellationToken)
+    public async Task<IActionResult> StartCheckout([FromQuery] long amountVnd, [FromQuery] string orderId, [FromQuery] Guid? walletId,[FromQuery] Guid userId, CancellationToken cancellationToken)
     {
         var config = BuildConfiguration();
         var clientIp = ResolveClientIp();
@@ -36,6 +41,8 @@ public sealed class VnPayController : ControllerBase
             amountVnd,
             orderId,
             clientIp,
+            walletId,
+            userId,
             config,
             DateTime.UtcNow);
 
@@ -56,8 +63,23 @@ public sealed class VnPayController : ControllerBase
     {
         var config = BuildConfiguration();
         var parameters = Request.Query.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.Ordinal);
+        var userId = parameters.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out var parsedUserId)
+            ? parsedUserId
+            : (Guid?)null;
 
-        var query = new GetVNPayReturnViewQuery(parameters, config);
+        var command = new ProcessPaymentGatewayReturnCommand(Gateway.Vnpay, parameters, config, userId);
+        var commandResult = await _mediator.Send(command, cancellationToken);
+        if (commandResult.IsFailure)
+        {
+            return CreateErrorResponse(commandResult.Error);
+        }
+
+        if (commandResult.Value.UserId.HasValue)
+        {
+            parameters["userId"] = commandResult.Value.UserId.Value.ToString();
+        }
+
+        var query = new GetVNPayReturnViewQuery(parameters, config, commandResult.Value.UserId);
         var result = await _mediator.Send(query, cancellationToken);
         if (result.IsFailure)
         {

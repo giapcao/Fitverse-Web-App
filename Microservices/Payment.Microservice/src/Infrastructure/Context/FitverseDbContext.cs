@@ -148,9 +148,9 @@ public partial class FitverseDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasColumnType("wallet_journal_status_enum")
                 .HasColumnName("status");
-            entity.Property(e => e.JournalType)
+            entity.Property(e => e.Type)
                 .HasColumnType("wallet_journal_type_enum")
-                .HasColumnName("journal_type");
+                .HasColumnName("type");
             entity.Property(e => e.PostedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("posted_at");
@@ -173,6 +173,9 @@ public partial class FitverseDbContext : DbContext
             entity.Property(e => e.Dc)
                 .HasColumnType("dc_enum")
                 .HasColumnName("dc");
+            entity.Property(e => e.AccountType)
+                .HasColumnType("wallet_account_type_enum")
+                .HasColumnName("account_type");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");

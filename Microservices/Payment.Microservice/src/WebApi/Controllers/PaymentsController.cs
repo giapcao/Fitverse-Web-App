@@ -12,7 +12,7 @@ using SharedLibrary.Common;
 
 namespace WebApi.Controllers;
 
-[Authorize]
+
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/[controller]/v{version:apiVersion}")]
@@ -62,6 +62,21 @@ public class PaymentsController : ApiController
 
         var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
         return CreatedAtAction(nameof(GetPaymentById), new { id = result.Value.Id, version }, result.Value);
+    }
+
+    [HttpPost("initiate")]
+    [ProducesResponseType(typeof(InitiatePaymentResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> InitiatePayment([FromBody] InitiatePaymentCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
+        return CreatedAtAction(nameof(GetPaymentById), new { id = result.Value.PaymentId, version }, result.Value);
     }
 
     [HttpPut("{id:guid}")]

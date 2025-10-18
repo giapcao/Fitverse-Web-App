@@ -13,7 +13,9 @@ public partial class WalletLedgerEntry
     public long AmountVnd { get; set; }
 
     public Dc Dc { get; set; }
-
+    
+    public WalletAccountType AccountType { get; set; }
+    
     public string? Description { get; set; }
 
     public DateTime CreatedAt { get; set; }

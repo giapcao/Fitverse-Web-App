@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
+using Application.Payments.VNPay;
 using Domain.Enums;
 using Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
 
-namespace Application.Payments.VNPay.Commands;
+namespace Application.VNPay.Commands;
 
 public sealed record VnPayIpnResponse(string RspCode, string Message);
 

@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,14 +21,21 @@ public static class VnPayHelper
         long amountVnd,
         string orderId,
         string clientIp,
-        DateTime requestedAtUtc)
+        DateTime requestedAtUtc,
+        Guid? walletId,
+        Guid userId)
     {
         ArgumentNullException.ThrowIfNull(configuration);
+        _ = walletId;
 
         var tmnCode = configuration.TmnCode?.Trim();
         var hashSecret = configuration.HashSecret?.Trim();
         var baseUrl = configuration.BaseUrl?.Trim();
         var returnUrl = configuration.ReturnUrl?.Trim();
+        if (!string.IsNullOrWhiteSpace(returnUrl))
+        {
+            returnUrl = AppendOrReplaceQueryParameter(returnUrl, "userId", userId.ToString());
+        }
 
         if (string.IsNullOrWhiteSpace(tmnCode) ||
             string.IsNullOrWhiteSpace(hashSecret) ||
@@ -37,6 +45,11 @@ public static class VnPayHelper
             throw new ArgumentException("VNPay configuration is incomplete.");
         }
 
+        if (userId == Guid.Empty)
+        {
+            throw new ArgumentException("UserId is not null");
+        }
+        
         if (amountVnd <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(amountVnd));
@@ -59,7 +72,7 @@ public static class VnPayHelper
             ["vnp_Locale"] = DefaultLocale,
             ["vnp_OrderInfo"] = BuildOrderInfo(orderId),
             ["vnp_OrderType"] = OrderTypeOther,
-            ["vnp_ReturnUrl"] = returnUrl,
+            ["vnp_ReturnUrl"] = returnUrl ?? string.Empty,
             ["vnp_TmnCode"] = tmnCode,
             ["vnp_TxnRef"] = orderId,
             ["vnp_Version"] = "2.1.0"
@@ -137,6 +150,11 @@ public static class VnPayHelper
                 continue;
             }
 
+            if (!kvp.Key.StartsWith("vnp_", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             if (kvp.Key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase) ||
                 kvp.Key.Equals("vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
             {
@@ -208,6 +226,31 @@ public static class VnPayHelper
         using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(secret));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
         return Convert.ToHexString(hash); 
+    }
+
+    private static string? AppendOrReplaceQueryParameter(string? url, string key, string value)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return url;
+        }
+
+        if (string.IsNullOrEmpty(value))
+        {
+            return url;
+        }
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out var absoluteUri))
+        {
+            var builder = new UriBuilder(absoluteUri);
+            var query = HttpUtility.ParseQueryString(builder.Query ?? string.Empty);
+            query[key] = value;
+            builder.Query = query.ToString();
+            return builder.Uri.ToString();
+        }
+
+        var separator = url.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return $"{url}{separator}{key}={UrlEncodeUpper(value)}";
     }
 }
 

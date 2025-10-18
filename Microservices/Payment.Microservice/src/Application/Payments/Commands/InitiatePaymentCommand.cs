@@ -1,0 +1,76 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Application.Abstractions.Messaging;
+using Domain.Entities;
+using Domain.Enums;
+using Domain.Repositories;
+using SharedLibrary.Common.ResponseModel;
+
+namespace Application.Payments.Commands;
+
+public sealed record InitiatePaymentCommand(
+    long AmountVnd,
+    Gateway Gateway,
+    Guid? BookingId
+) : ICommand<InitiatePaymentResponse>;
+
+public sealed record InitiatePaymentResponse(
+    Guid PaymentId,
+    Guid WalletJournalId,
+    PaymentStatus PaymentStatus,
+    WalletJournalStatus WalletJournalStatus,
+    WalletJournalType WalletJournalType);
+
+internal sealed class InitiatePaymentCommandHandler : ICommandHandler<InitiatePaymentCommand, InitiatePaymentResponse>
+{
+    private readonly IPaymentRepository _paymentRepository;
+    private readonly IWalletJournalRepository _walletJournalRepository;
+
+    public InitiatePaymentCommandHandler(
+        IPaymentRepository paymentRepository,
+        IWalletJournalRepository walletJournalRepository)
+    {
+        _paymentRepository = paymentRepository;
+        _walletJournalRepository = walletJournalRepository;
+    }
+
+    public async Task<Result<InitiatePaymentResponse>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+
+        var payment = new Payment
+        {
+            Id = Guid.NewGuid(),
+            AmountVnd = request.AmountVnd,
+            Gateway = request.Gateway,
+            Status = PaymentStatus.Initiated,
+            CreatedAt = now,
+            RefundAmountVnd = 0
+        };
+
+        await _paymentRepository.AddAsync(payment, cancellationToken);
+
+        var walletJournal = new WalletJournal
+        {
+            Id = Guid.NewGuid(),
+            BookingId = request.BookingId,
+            PaymentId = payment.Id,
+            Status = WalletJournalStatus.Pending,
+            Type = WalletJournalType.Deposit,
+            CreatedAt = now,
+            PostedAt = null
+        };
+
+        await _walletJournalRepository.AddAsync(walletJournal, cancellationToken);
+
+        var response = new InitiatePaymentResponse(
+            payment.Id,
+            walletJournal.Id,
+            payment.Status,
+            walletJournal.Status,
+            walletJournal.Type);
+
+        return Result.Success(response);
+    }
+}

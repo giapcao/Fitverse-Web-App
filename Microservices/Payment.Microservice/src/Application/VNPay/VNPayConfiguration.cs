@@ -1,3 +1,5 @@
+using Application.Payments.Common;
+
 namespace Application.Payments.VNPay;
 
 public sealed record VNPayConfiguration(
@@ -5,7 +7,7 @@ public sealed record VNPayConfiguration(
     string HashSecret,
     string BaseUrl,
     string ReturnUrl,
-    string IpnUrl)
+    string IpnUrl) : IPaymentGatewayConfiguration
 {
     public bool IsComplete =>
         !string.IsNullOrWhiteSpace(TmnCode) &&

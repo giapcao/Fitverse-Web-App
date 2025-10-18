@@ -14,6 +14,7 @@ using SharedLibrary.Common;
 using SharedLibrary.Configs;
 using SharedLibrary.Utils;
 using WebApi.Constants;
+using WebApi.HostedServices;
 using WebApi.Options;
 
 string solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? "";
@@ -59,27 +60,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Payment", Version = "v1" });
-    c.SwaggerDoc("vnpay", new OpenApiInfo { Title = "VNPay", Version = "v1" });
-
-    c.DocInclusionPredicate((docName, apiDesc) =>
-    {
-        var groupName = apiDesc.GroupName;
-
-        if (docName.Equals("vnpay", StringComparison.OrdinalIgnoreCase))
-        {
-            return string.Equals(groupName, "vnpay", StringComparison.OrdinalIgnoreCase);
-        }
-
-        if (docName.Equals("v1", StringComparison.OrdinalIgnoreCase))
-        {
-            return string.IsNullOrEmpty(groupName) ||
-                   string.Equals(groupName, docName, StringComparison.OrdinalIgnoreCase);
-        }
-
-        return false;
-    });
-
-
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -128,6 +109,7 @@ builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()
     .AddInfrastructure();
+builder.Services.AddHostedService<VnPayReturnTimeoutService>();
 
 var app = builder.Build();
 

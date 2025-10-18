@@ -1,16 +1,18 @@
-using System;
 using System.Net;
 using System.Net.Sockets;
 using Application.Abstractions.Messaging;
+using Application.Payments.VNPay;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
 
-namespace Application.Payments.VNPay.Queries;
+namespace Application.VNPay.Queries;
 
 public sealed record GetVnPayCheckoutUrlQuery(
     long AmountVnd,
     string OrderId,
     string ClientIp,
+    Guid? WalletId,
+    Guid UserId,
     VNPayConfiguration Configuration,
     DateTime RequestedAtUtc) : IQuery<string>;
 
@@ -49,7 +51,9 @@ internal sealed class GetVnPayCheckoutUrlQueryHandler : IQueryHandler<GetVnPayCh
                 request.AmountVnd,
                 orderId,
                 NormalizeClientIp(request.ClientIp),
-                request.RequestedAtUtc);
+                request.RequestedAtUtc,
+                request.WalletId,
+                request.UserId);
 
             _logger.LogInformation(
                 "VNPay checkout rawQuery={RawQuery} secureHash={SecureHash}",
