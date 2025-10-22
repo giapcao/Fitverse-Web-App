@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Application.Abstractions.Messaging;
+using Application.Payments;
 using Application.Payments.VNPay;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
@@ -13,7 +14,8 @@ public sealed record GetVnPayCheckoutUrlQuery(
     string ClientIp,
     Guid? WalletId,
     Guid UserId,
-    VNPayConfiguration Configuration,
+    PaymentFlow Flow,
+    VnPayConfiguration Configuration,
     DateTime RequestedAtUtc) : IQuery<string>;
 
 internal sealed class GetVnPayCheckoutUrlQueryHandler : IQueryHandler<GetVnPayCheckoutUrlQuery, string>
@@ -28,7 +30,7 @@ internal sealed class GetVnPayCheckoutUrlQueryHandler : IQueryHandler<GetVnPayCh
     public Task<Result<string>> Handle(GetVnPayCheckoutUrlQuery request, CancellationToken cancellationToken)
     {
         var configuration = request.Configuration;
-        if (!configuration.IsComplete)
+        if (!configuration.IsConfiguredFor(request.Flow))
         {
             return Task.FromResult(Result.Failure<string>(VnPayErrors.ConfigurationMissing));
         }
@@ -48,6 +50,7 @@ internal sealed class GetVnPayCheckoutUrlQueryHandler : IQueryHandler<GetVnPayCh
         {
             var signedRequest = VnPayHelper.BuildPaymentUrl(
                 configuration,
+                request.Flow,
                 request.AmountVnd,
                 orderId,
                 NormalizeClientIp(request.ClientIp),

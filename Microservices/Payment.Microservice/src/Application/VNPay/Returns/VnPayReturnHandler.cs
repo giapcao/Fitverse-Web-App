@@ -9,7 +9,7 @@ using SharedLibrary.Common.ResponseModel;
 
 namespace Application.VNPay.Returns;
 
-internal sealed class VnPayReturnHandler : PaymentGatewayReturnHandlerBase<VNPayConfiguration>
+internal sealed class VnPayReturnHandler : PaymentGatewayReturnHandlerBase<VnPayConfiguration>
 {
     public VnPayReturnHandler(
         IPaymentRepository paymentRepository,
@@ -32,7 +32,7 @@ internal sealed class VnPayReturnHandler : PaymentGatewayReturnHandlerBase<VNPay
 
     public override Gateway Gateway => Gateway.Vnpay;
 
-    protected override bool IsConfigurationValid(VNPayConfiguration configuration)
+    protected override bool IsConfigurationValid(VnPayConfiguration configuration)
     {
         return !string.IsNullOrWhiteSpace(configuration.HashSecret) &&
                !string.IsNullOrWhiteSpace(configuration.TmnCode);
@@ -42,7 +42,7 @@ internal sealed class VnPayReturnHandler : PaymentGatewayReturnHandlerBase<VNPay
 
     protected override bool ValidateSignature(
         IReadOnlyDictionary<string, string> parameters,
-        VNPayConfiguration configuration)
+        VnPayConfiguration configuration)
     {
         return VnPayHelper.ValidateSignature(parameters, configuration.HashSecret);
     }

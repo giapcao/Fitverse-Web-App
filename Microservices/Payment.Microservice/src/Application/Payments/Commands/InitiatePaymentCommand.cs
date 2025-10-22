@@ -12,11 +12,12 @@ namespace Application.Payments.Commands;
 public sealed record InitiatePaymentCommand(
     long AmountVnd,
     Gateway Gateway,
-    Guid? BookingId
+    Guid? BookingId,
+    PaymentFlow Flow
 ) : ICommand<InitiatePaymentResponse>;
 
 public sealed record InitiatePaymentResponse(
-    Guid PaymentId,
+    Guid? PaymentId,
     Guid WalletJournalId,
     PaymentStatus PaymentStatus,
     WalletJournalStatus WalletJournalStatus,
@@ -38,26 +39,45 @@ internal sealed class InitiatePaymentCommandHandler : ICommandHandler<InitiatePa
     public async Task<Result<InitiatePaymentResponse>> Handle(InitiatePaymentCommand request, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
-
-        var payment = new Payment
+        var journalType = request.Flow switch
         {
-            Id = Guid.NewGuid(),
-            AmountVnd = request.AmountVnd,
-            Gateway = request.Gateway,
-            Status = PaymentStatus.Initiated,
-            CreatedAt = now,
-            RefundAmountVnd = 0
+            PaymentFlow.DepositWallet => WalletJournalType.Deposit,
+            PaymentFlow.BookingByWallet => WalletJournalType.Hold,
+            PaymentFlow.Booking => WalletJournalType.Hold,
+            _ => (WalletJournalType?)null
         };
 
-        await _paymentRepository.AddAsync(payment, cancellationToken);
+        if (!journalType.HasValue)
+        {
+            return Result.Failure<InitiatePaymentResponse>(
+                new Error("Payment.FlowNotSupported", $"Payment flow '{request.Flow}' is not supported."));
+        }
+
+        var isBookingByWallet = request.Flow == PaymentFlow.BookingByWallet;
+        Payment? payment = null;
+
+        if (!isBookingByWallet)
+        {
+            payment = new Payment
+            {
+                Id = Guid.NewGuid(),
+                AmountVnd = request.AmountVnd,
+                Gateway = request.Gateway,
+                Status = PaymentStatus.Initiated,
+                CreatedAt = now,
+                RefundAmountVnd = 0
+            };
+
+            await _paymentRepository.AddAsync(payment, cancellationToken);
+        }
 
         var walletJournal = new WalletJournal
         {
             Id = Guid.NewGuid(),
             BookingId = request.BookingId,
-            PaymentId = payment.Id,
+            PaymentId = payment?.Id,
             Status = WalletJournalStatus.Pending,
-            Type = WalletJournalType.Deposit,
+            Type = journalType.Value,
             CreatedAt = now,
             PostedAt = null
         };
@@ -65,9 +85,9 @@ internal sealed class InitiatePaymentCommandHandler : ICommandHandler<InitiatePa
         await _walletJournalRepository.AddAsync(walletJournal, cancellationToken);
 
         var response = new InitiatePaymentResponse(
-            payment.Id,
+            payment?.Id,
             walletJournal.Id,
-            payment.Status,
+            payment?.Status ?? PaymentStatus.Initiated,
             walletJournal.Status,
             walletJournal.Type);
 

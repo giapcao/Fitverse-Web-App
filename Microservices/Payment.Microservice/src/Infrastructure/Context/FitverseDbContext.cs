@@ -152,7 +152,6 @@ public partial class FitverseDbContext : DbContext
                 .HasColumnType("wallet_journal_type_enum")
                 .HasColumnName("type");
             entity.Property(e => e.PostedAt)
-                .HasDefaultValueSql("now()")
                 .HasColumnName("posted_at");
         });
 

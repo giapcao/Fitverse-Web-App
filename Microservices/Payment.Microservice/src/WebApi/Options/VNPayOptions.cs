@@ -10,7 +10,9 @@ public sealed class VNPayOptions
 
     public string BaseUrl { get; set; } = string.Empty;
 
-    public string ReturnUrl { get; set; } = string.Empty;
+    public string ReturnWalletUrl { get; set; } = string.Empty;
+
+    public string ReturnBookingUrl { get; set; } = string.Empty;
 
     public string IpnUrl { get; set; } = string.Empty;
 }

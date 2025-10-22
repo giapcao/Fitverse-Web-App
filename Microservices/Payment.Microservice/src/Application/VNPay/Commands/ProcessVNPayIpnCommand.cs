@@ -13,7 +13,7 @@ public sealed record VnPayIpnResponse(string RspCode, string Message);
 
 public sealed record ProcessVnPayIpnCommand(
     IReadOnlyDictionary<string, string> QueryParameters,
-    VNPayConfiguration Configuration) : ICommand<VnPayIpnResponse>;
+    VnPayConfiguration Configuration) : ICommand<VnPayIpnResponse>;
 
 internal sealed class ProcessVnPayIpnCommandHandler : ICommandHandler<ProcessVnPayIpnCommand, VnPayIpnResponse>
 {

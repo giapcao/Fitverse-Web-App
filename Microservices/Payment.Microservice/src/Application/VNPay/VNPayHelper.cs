@@ -1,11 +1,11 @@
-using System;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using Application.Payments;
 
-namespace Application.Payments.VNPay;
+namespace Application.VNPay;
 
 public static class VnPayHelper
 {
@@ -17,7 +17,8 @@ public static class VnPayHelper
     private const string VietnamTimeFormat = "yyyyMMddHHmmss";
     private static readonly TimeSpan VietnamOffset = TimeSpan.FromHours(7);
     public static VnPaySignedRequest BuildPaymentUrl(
-        VNPayConfiguration configuration,
+        VnPayConfiguration configuration,
+        PaymentFlow flow,
         long amountVnd,
         string orderId,
         string clientIp,
@@ -31,7 +32,7 @@ public static class VnPayHelper
         var tmnCode = configuration.TmnCode?.Trim();
         var hashSecret = configuration.HashSecret?.Trim();
         var baseUrl = configuration.BaseUrl?.Trim();
-        var returnUrl = configuration.ReturnUrl?.Trim();
+        var returnUrl = configuration.GetReturnUrl(flow)?.Trim();
         if (!string.IsNullOrWhiteSpace(returnUrl))
         {
             returnUrl = AppendOrReplaceQueryParameter(returnUrl, "userId", userId.ToString());
@@ -42,7 +43,7 @@ public static class VnPayHelper
             string.IsNullOrWhiteSpace(baseUrl) ||
             string.IsNullOrWhiteSpace(returnUrl))
         {
-            throw new ArgumentException("VNPay configuration is incomplete.");
+            throw new ArgumentException($"Payment configuration is incomplete for flow {flow}.");
         }
 
         if (userId == Guid.Empty)

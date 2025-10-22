@@ -109,7 +109,7 @@ builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()
     .AddInfrastructure();
-builder.Services.AddHostedService<VnPayReturnTimeoutService>();
+builder.Services.AddHostedService<PaymentReturnTimeoutService>();
 
 var app = builder.Build();
 

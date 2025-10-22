@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using Application.Abstractions.Messaging;
+using Application.VNPay;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
 
@@ -19,7 +20,7 @@ public sealed record VNPayReturnView(
 
 public sealed record GetVNPayReturnViewQuery(
     IReadOnlyDictionary<string, string> QueryParameters,
-    VNPayConfiguration Configuration,
+    VnPayConfiguration Configuration,
     Guid? UserIdOverride) : IQuery<VNPayReturnView>;
 
 internal sealed class GetVnPayReturnViewQueryHandler : IQueryHandler<GetVNPayReturnViewQuery, VNPayReturnView>

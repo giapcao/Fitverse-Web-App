@@ -1,4 +1,5 @@
 using System;
+using Application.Payments;
 using Application.Payments.Commands;
 using FluentValidation;
 
@@ -14,8 +15,16 @@ public sealed class InitiatePaymentCommandValidator : AbstractValidator<Initiate
         RuleFor(x => x.Gateway)
             .IsInEnum();
 
+        RuleFor(x => x.Flow)
+            .IsInEnum();
+
         RuleFor(x => x.BookingId)
             .NotEqual(Guid.Empty)
             .When(x => x.BookingId.HasValue);
+
+        RuleFor(x => x.BookingId)
+            .NotNull()
+            .When(x => x.Flow == PaymentFlow.BookingByWallet)
+            .WithMessage("BookingId is required for booking flows.");
     }
 }

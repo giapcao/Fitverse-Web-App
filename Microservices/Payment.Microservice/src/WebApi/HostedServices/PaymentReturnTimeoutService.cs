@@ -1,26 +1,19 @@
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Repositories;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using SharedLibrary.Common;
 
 namespace WebApi.HostedServices;
 
-public sealed class VnPayReturnTimeoutService : BackgroundService
+public sealed class PaymentReturnTimeoutService : BackgroundService
 {
     private static readonly TimeSpan PollingInterval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan ReturnTimeout = TimeSpan.FromMinutes(10);
 
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly ILogger<VnPayReturnTimeoutService> _logger;
+    private readonly ILogger<PaymentReturnTimeoutService> _logger;
 
-    public VnPayReturnTimeoutService(IServiceScopeFactory serviceScopeFactory, ILogger<VnPayReturnTimeoutService> logger)
+    public PaymentReturnTimeoutService(IServiceScopeFactory serviceScopeFactory, ILogger<PaymentReturnTimeoutService> logger)
     {
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
