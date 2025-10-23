@@ -1,3 +1,4 @@
+    using Application.AvailabilityRules.Services;
 using Application.Behaviors;
 using Application.Common.Mapper;
 using FluentValidation;
@@ -24,6 +25,7 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationPipelineBehavior<,>));
         services.AddScoped(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
+        services.AddScoped<IAvailabilityRuleScheduler, AvailabilityRuleScheduler>();
 
         return services;
     }

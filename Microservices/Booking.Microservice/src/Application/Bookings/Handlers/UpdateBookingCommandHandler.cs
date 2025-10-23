@@ -34,7 +34,6 @@ public sealed class UpdateBookingCommandHandler : ICommandHandler<UpdateBookingC
 
         booking.UserId = request.UserId;
         booking.CoachId = request.CoachId;
-        booking.ServiceId = request.ServiceId;
         booking.TimeslotId = request.TimeslotId;
         booking.StartAt = request.StartAt;
         booking.EndAt = request.EndAt;
@@ -46,7 +45,6 @@ public sealed class UpdateBookingCommandHandler : ICommandHandler<UpdateBookingC
         booking.CurrencyCode = request.CurrencyCode;
         booking.LocationNote = request.LocationNote;
         booking.Notes = request.Notes;
-        booking.ServiceTitle = request.ServiceTitle;
         booking.DurationMinutes = request.DurationMinutes;
         booking.UpdatedAt = DateTime.UtcNow;
 

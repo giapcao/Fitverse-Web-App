@@ -21,7 +21,6 @@ public static class DependencyInjection
 
         services.AddScoped<IAvailabilityRuleRepository, AvailabilityRuleRepository>();
         services.AddScoped<IBookingRepository, BookingRepository>();
-        services.AddScoped<ICoachTimeoffRepository, CoachTimeoffRepository>();
         services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
         services.AddScoped<ISubscriptionEventRepository, SubscriptionEventRepository>();
         services.AddScoped<ITimeslotRepository, TimeslotRepository>();

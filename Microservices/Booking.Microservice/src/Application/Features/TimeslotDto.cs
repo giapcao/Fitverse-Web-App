@@ -22,7 +22,6 @@ public record BookingSummaryDto(
     Guid Id,
     Guid UserId,
     Guid CoachId,
-    Guid ServiceId,
     DateTime StartAt,
     DateTime EndAt,
     string Status);

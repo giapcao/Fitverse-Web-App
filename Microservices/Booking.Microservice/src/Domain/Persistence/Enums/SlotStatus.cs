@@ -8,6 +8,10 @@ public enum SlotStatus
     [PgName("open")]
     [JsonStringEnumMemberName("open")]
     Open,
+    
+    [PgName("pending")]
+    [JsonStringEnumMemberName("pending")]
+    Pending,
 
     [PgName("reserved")]
     [JsonStringEnumMemberName("reserved")]

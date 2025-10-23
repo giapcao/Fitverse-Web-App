@@ -9,7 +9,6 @@ public class CreateBookingCommandValidator : AbstractValidator<CreateBookingComm
     {
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.CoachId).NotEmpty();
-        RuleFor(x => x.ServiceId).NotEmpty();
         RuleFor(x => x.StartAt).LessThan(x => x.EndAt);
         RuleFor(x => x.GrossAmountVnd).GreaterThanOrEqualTo(0);
         RuleFor(x => x.CommissionPct).InclusiveBetween(0, 100);

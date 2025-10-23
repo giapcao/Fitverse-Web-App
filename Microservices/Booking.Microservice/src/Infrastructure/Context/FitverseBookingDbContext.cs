@@ -21,8 +21,6 @@ public partial class FitverseBookingDbContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
-    public virtual DbSet<CoachTimeoff> CoachTimeoffs { get; set; }
-
     public virtual DbSet<Subscription> Subscriptions { get; set; }
 
     public virtual DbSet<SubscriptionEvent> SubscriptionEvents { get; set; }
@@ -118,8 +116,6 @@ public partial class FitverseBookingDbContext : DbContext
             entity.Property(e => e.LocationNote).HasColumnName("location_note");
             entity.Property(e => e.NetAmountVnd).HasColumnName("net_amount_vnd");
             entity.Property(e => e.Notes).HasColumnName("notes");
-            entity.Property(e => e.ServiceId).HasColumnName("service_id");
-            entity.Property(e => e.ServiceTitle).HasColumnName("service_title");
             entity.Property(e => e.StartAt).HasColumnName("start_at");
             entity.Property(e => e.TimeslotId).HasColumnName("timeslot_id");
             entity.Property(e => e.UpdatedAt)
@@ -131,28 +127,6 @@ public partial class FitverseBookingDbContext : DbContext
                 .HasForeignKey(d => d.TimeslotId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("fk_booking_timeslot");
-        });
-
-        modelBuilder.Entity<CoachTimeoff>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("coach_timeoff_pkey");
-
-            entity.ToTable("coach_timeoff");
-
-            entity.HasIndex(e => e.CoachId, "idx_timeoff_coach");
-
-            entity.HasIndex(e => new { e.CoachId, e.StartAt, e.EndAt }, "idx_timeoff_range");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("gen_random_uuid()")
-                .HasColumnName("id");
-            entity.Property(e => e.CoachId).HasColumnName("coach_id");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("now()")
-                .HasColumnName("created_at");
-            entity.Property(e => e.EndAt).HasColumnName("end_at");
-            entity.Property(e => e.Reason).HasColumnName("reason");
-            entity.Property(e => e.StartAt).HasColumnName("start_at");
         });
 
         modelBuilder.Entity<Subscription>(entity =>

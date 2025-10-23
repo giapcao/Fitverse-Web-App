@@ -13,4 +13,11 @@ public interface ISubscriptionRepository : IRepository<Subscription>
     Task<Subscription?> GetDetailedByIdAsync(Guid id, CancellationToken cancellationToken, bool asNoTracking = false);
     Task<IReadOnlyList<Subscription>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken, bool asNoTracking = false);
     Task<IReadOnlyList<Subscription>> GetByCoachIdAsync(Guid coachId, CancellationToken cancellationToken, bool asNoTracking = false);
+    Task<Subscription?> FindActiveForBookingAsync(
+        Guid userId,
+        Guid coachId,
+        DateTime bookingStart,
+        DateTime bookingEnd,
+        CancellationToken cancellationToken,
+        bool asNoTracking = false);
 }

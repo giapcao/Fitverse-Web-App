@@ -9,10 +9,10 @@ public enum SubscriptionStatus
     [JsonStringEnumMemberName("active")]
     Active,
 
-    [PgName("paused")]
-    [JsonStringEnumMemberName("paused")]
-    Paused,
-
+    [PgName("pending")]
+    [JsonStringEnumMemberName("pending")]
+    Pending,
+    
     [PgName("canceled")]
     [JsonStringEnumMemberName("canceled")]
     Canceled,

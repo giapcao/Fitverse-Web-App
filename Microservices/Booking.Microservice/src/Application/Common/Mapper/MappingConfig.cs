@@ -22,8 +22,6 @@ public static class MappingConfig
         config.NewConfig<SubscriptionEvent, SubscriptionEventSummaryDto>()
             .Map(dest => dest.EventType, src => src.EventType.ToString());
 
-        config.NewConfig<CoachTimeoff, CoachTimeoffDto>();
-
         config.NewConfig<Subscription, SubscriptionDto>()
             .Map(dest => dest.Status, src => src.Status.ToString())
             .Map(dest => dest.Events, src => src.SubscriptionEvents);
