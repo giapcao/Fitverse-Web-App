@@ -9,7 +9,6 @@ public sealed record UpdateBookingCommand(
     Guid Id,
     Guid UserId,
     Guid CoachId,
-    Guid ServiceId,
     Guid? TimeslotId,
     DateTime StartAt,
     DateTime EndAt,
@@ -21,5 +20,4 @@ public sealed record UpdateBookingCommand(
     string CurrencyCode,
     string? LocationNote,
     string? Notes,
-    string? ServiceTitle,
     int? DurationMinutes) : ICommand<BookingDto>;

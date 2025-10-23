@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Domain.IRepositories;
 using Domain.Persistence;
+using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using Infrastructure.Common;
 using Microsoft.EntityFrameworkCore;
@@ -69,5 +70,31 @@ public class SubscriptionRepository : Repository<Subscription>, ISubscriptionRep
         return await query
             .OrderByDescending(s => s.PeriodStart)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Subscription?> FindActiveForBookingAsync(
+        Guid userId,
+        Guid coachId,
+        DateTime bookingStart,
+        DateTime bookingEnd,
+        CancellationToken cancellationToken,
+        bool asNoTracking = false)
+    {
+        IQueryable<Subscription> query = _context.Subscriptions.Where(s =>
+            s.UserId == userId &&
+            s.CoachId == coachId &&
+            s.Status == SubscriptionStatus.Active &&
+            s.PeriodStart <= bookingStart &&
+            s.PeriodEnd >= bookingEnd &&
+            s.SessionsReserved < s.SessionsTotal);
+
+        if (asNoTracking)
+        {
+            query = query.AsNoTracking();
+        }
+
+        return await query
+            .OrderBy(s => s.PeriodEnd)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

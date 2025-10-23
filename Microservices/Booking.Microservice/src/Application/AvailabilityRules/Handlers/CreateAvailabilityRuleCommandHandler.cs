@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.AvailabilityRules.Commands;
+using Application.AvailabilityRules.Services;
 using Application.Features;
 using Domain.IRepositories;
 using Domain.Persistence.Models;
@@ -16,13 +17,16 @@ public sealed class CreateAvailabilityRuleCommandHandler
     : ICommandHandler<CreateAvailabilityRuleCommand, AvailabilityRuleDto>
 {
     private readonly IAvailabilityRuleRepository _availabilityRuleRepository;
+    private readonly IAvailabilityRuleScheduler _availabilityRuleScheduler;
     private readonly IMapper _mapper;
 
     public CreateAvailabilityRuleCommandHandler(
         IAvailabilityRuleRepository availabilityRuleRepository,
+        IAvailabilityRuleScheduler availabilityRuleScheduler,
         IMapper mapper)
     {
         _availabilityRuleRepository = availabilityRuleRepository;
+        _availabilityRuleScheduler = availabilityRuleScheduler;
         _mapper = mapper;
     }
 
@@ -47,6 +51,7 @@ public sealed class CreateAvailabilityRuleCommandHandler
         };
 
         await _availabilityRuleRepository.AddAsync(rule, cancellationToken);
+        await _availabilityRuleScheduler.EnsureFutureSlotsAsync(rule, cancellationToken);
 
         var dto = _mapper.Map<AvailabilityRuleDto>(rule);
         return Result.Success(dto);

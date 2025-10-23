@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using Application.Bookings.Commands;
 using Application.Bookings.Queries;
@@ -76,6 +77,73 @@ public class BookingsController : ApiController
 
         var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
         return CreatedAtAction(nameof(GetBookingById), new { id = result.Value.Id, version }, result.Value);
+    }
+
+    [HttpPost("pending-package")]
+    [ProducesResponseType(typeof(BookingDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreatePendingSubscriptionBooking(
+        [FromBody] CreatePendingSubscriptionBookingCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
+        return CreatedAtAction(nameof(GetBookingById), new { id = result.Value.Id, version }, result.Value);
+    }
+
+    [HttpPost("subscription-package")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<BookingDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateSubscriptionPackageBookings(
+        [FromBody] CreateSubscriptionPackageBookingsCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        var firstBooking = result.Value.First();
+        var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
+        return CreatedAtAction(nameof(GetBookingById), new { id = firstBooking.Id, version }, result.Value);
+    }
+
+    [HttpPost("pending-package/cancel")]
+    [ProducesResponseType(typeof(BookingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CancelPendingSubscriptionBooking(
+        [FromBody] CancelPendingSubscriptionBookingCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("pending-package/confirm")]
+    [ProducesResponseType(typeof(BookingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ConfirmPendingSubscriptionBooking(
+        [FromBody] ConfirmPendingSubscriptionBookingCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
     }
 
     [HttpPut("{id:guid}")]

@@ -21,9 +21,6 @@ public class Booking
     [Column("coach_id")]
     public Guid CoachId { get; set; }
 
-    [Column("service_id")]
-    public Guid ServiceId { get; set; }
-
     [Column("timeslot_id")]
     public Guid? TimeslotId { get; set; }
 
@@ -57,9 +54,6 @@ public class Booking
 
     [Column("notes")]
     public string? Notes { get; set; }
-
-    [Column("service_title")]
-    public string? ServiceTitle { get; set; }
 
     [Column("duration_minutes")]
     public int? DurationMinutes { get; set; }
