@@ -57,8 +57,7 @@ public sealed class UpdateCoachProfileAvatarCommandHandler : ICommandHandler<Upd
 
         profile.UpdatedAt = DateTime.UtcNow;
 
-        var updated = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
-        var dto = CoachProfileMapping.ToDto(updated);
+        var dto = CoachProfileMapping.ToDto(profile);
         dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
         return Result.Success(dto);
     }

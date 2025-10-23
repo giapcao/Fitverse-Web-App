@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Application.Abstractions.Interface;
+using Application.Consumers;
 using Domain.Entities;
 using Domain.IRepositories;
 using Infrastructure.Common;
@@ -60,7 +61,7 @@ namespace Infrastructure
             services.AddMassTransit(busConfigurator =>
             {
                 busConfigurator.SetKebabCaseEndpointNameFormatter();
-                // busConfigurator.AddConsumer<UserCreatedConsumer>();
+                busConfigurator.AddConsumer<CoachRoleAssignRequestedConsumer>();
                 busConfigurator.UsingRabbitMq((context, configurator) =>
                 {
                     if (config.IsRabbitMqCloud)
