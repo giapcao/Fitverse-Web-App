@@ -10,6 +10,8 @@ using Domain.Persistence.Models;
 using SharedLibrary.Common;
 using SharedLibrary.Storage;
 using SharedLibrary.Common.ResponseModel;
+using MassTransit;
+using SharedLibrary.Contracts.CoachProfileCreating;
 
 namespace Application.CoachProfiles.Handler;
 
@@ -17,11 +19,16 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
 {
     private readonly ICoachProfileRepository _repository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IFileStorageService fileStorageService)
+    public CreateCoachProfileCommandHandler(
+        ICoachProfileRepository repository,
+        IFileStorageService fileStorageService,
+        IPublishEndpoint publishEndpoint)
     {
         _repository = repository;
         _fileStorageService = fileStorageService;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<CoachProfileDto>> Handle(CreateCoachProfileCommand request, CancellationToken cancellationToken)
@@ -66,6 +73,14 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         var created = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
         var dto = CoachProfileMapping.ToDto(created);
         dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
+
+        await _publishEndpoint.Publish(new CoachProfileCreatingSagaStart
+        {
+            CorrelationId = Guid.NewGuid(),
+            CoachId = profile.UserId,
+            Role = "Coach"
+        }, cancellationToken);
+
         return Result.Success(dto);
     }
 }

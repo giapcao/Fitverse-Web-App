@@ -1,4 +1,6 @@
+using System;
 using Amazon.S3;
+using Application.Sagas;
 using Domain.IRepositories;
 using Infrastructure.Common;
 using Infrastructure.Repositories;
@@ -54,8 +56,16 @@ public static class DependencyInjection
             }
             services.AddMassTransit(busConfigurator =>
             {
+                busConfigurator.AddSagaStateMachine<CoachProfileCreatingSaga, CoachProfileCreatingSagaData>()
+                    .RedisRepository(r =>
+                    {
+                        r.DatabaseConfiguration($"{config.RedisHost}:{config.RedisPort},password={config.RedisPassword}");
+                        r.KeyPrefix = "coach-profile-creating-saga";
+                        r.Expiry = TimeSpan.FromMinutes(10);
+                    });
+
                 busConfigurator.SetKebabCaseEndpointNameFormatter();
-                // busConfigurator.AddConsumer<UserCreatedConsumer>();
+
                 busConfigurator.UsingRabbitMq((context, configurator) =>
                 {
                     if (config.IsRabbitMqCloud)
