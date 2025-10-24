@@ -44,6 +44,7 @@ builder.Services
 
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyNames.VNPay, policy =>
@@ -105,6 +106,7 @@ builder.Services.AddSingleton(sp =>
     return dataSourceBuilder.Build();
 });
 builder.Services.Configure<VNPayOptions>(builder.Configuration.GetSection(VNPayOptions.SectionName));
+builder.Services.Configure<MomoOptions>(builder.Configuration.GetSection(MomoOptions.SectionName));
 builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()

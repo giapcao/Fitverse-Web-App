@@ -5,6 +5,7 @@ using Application.Abstractions.Messaging;
 using Domain.Entities;
 using Domain.Enums;
 using Domain.Repositories;
+using MediatR;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Payments.Commands;
@@ -56,6 +57,12 @@ internal sealed class InitiatePaymentCommandHandler : ICommandHandler<InitiatePa
         var isBookingByWallet = request.Flow == PaymentFlow.BookingByWallet;
         Payment? payment = null;
 
+        var isDepositWallet = request.Flow == PaymentFlow.DepositWallet;
+        if (isDepositWallet && request.BookingId.HasValue)
+        {
+            return Result.Failure<InitiatePaymentResponse>(new Error("Error", "booking must be null"));
+        }
+        
         if (!isBookingByWallet)
         {
             payment = new Payment

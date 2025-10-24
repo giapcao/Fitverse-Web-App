@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Application.Momo.Queries;
 using Application.Payments.Commands;
 using Application.Payments.Queries;
 using Application.Payments;
@@ -21,6 +22,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using WebApi.Helper;
 using WebApi.Options;
 
 namespace WebApi.Controllers;
@@ -31,10 +33,15 @@ namespace WebApi.Controllers;
 public class PaymentsController : ApiController
 {
     private readonly IOptions<VNPayOptions> _vnPayOptions;
+    private readonly IOptions<MomoOptions> _momoOptions;
 
-    public PaymentsController(IMediator mediator, IOptions<VNPayOptions> vnPayOptions) : base(mediator)
+    public PaymentsController(
+        IMediator mediator,
+        IOptions<VNPayOptions> vnPayOptions,
+        IOptions<MomoOptions> momoOptions) : base(mediator)
     {
         _vnPayOptions = vnPayOptions;
+        _momoOptions = momoOptions;
     }
 
     [HttpGet]
@@ -129,43 +136,118 @@ public class PaymentsController : ApiController
         [FromQuery] PaymentFlow? flow,
         CancellationToken cancellationToken)
     {
-        var config = BuildVnPayConfiguration();
-        var clientIp = ResolveClientIp();
+        var clientIp = PaymentsHelpers.ResolveClientIp(HttpContext);
         var selectedFlow = flow ?? PaymentFlow.DepositWallet;
 
-        var query = new GetVnPayCheckoutUrlQuery(
-            amountVnd,
-            orderId,
-            clientIp,
-            walletId,
-            userId,
-            selectedFlow,
-            config,
-            DateTime.UtcNow);
+        var trimmedOrderId = orderId?.Trim();
 
-        var result = await _mediator.Send(query, cancellationToken);
-        if (result.IsFailure)
+        if (string.IsNullOrWhiteSpace(trimmedOrderId) || !Guid.TryParse(trimmedOrderId, out var paymentId))
         {
-            return CreateErrorResponse(result.Error);
+            return CreateErrorResponse(new Error("Payment.InvalidOrderId", "orderId must be a valid payment identifier."));
         }
 
-        return Ok(new
+        var paymentResult = await _mediator.Send(new GetPaymentByIdQuery(paymentId), cancellationToken);
+        if (paymentResult.IsFailure)
         {
-            url = result.Value
-        });
-    }
+            return HandleFailure(paymentResult);
+        }
 
+        var payment = paymentResult.Value;
+        var normalizedOrderId = trimmedOrderId!;
+        var checkoutAmount = payment.AmountVnd > 0 ? payment.AmountVnd : amountVnd;
+
+        switch (payment.Gateway)
+        {
+            case Gateway.Vnpay:
+            {
+                var config = PaymentsHelpers.BuildVnPayConfiguration(_vnPayOptions.Value);
+                var query = new GetVnPayCheckoutUrlQuery(
+                    checkoutAmount,
+                    normalizedOrderId,
+                    clientIp,
+                    walletId,
+                    userId,
+                    selectedFlow,
+                    config,
+                    DateTime.UtcNow);
+
+                var result = await _mediator.Send(query, cancellationToken);
+                if (result.IsFailure)
+                {
+                    return CreateErrorResponse(result.Error);
+                }
+
+                return Ok(new
+                {
+                    gateway = payment.Gateway,
+                    url = result.Value
+                });
+            }
+
+            case Gateway.Momo:
+            {
+                var config = PaymentsHelpers.BuildMomoConfiguration(_momoOptions.Value);
+                var orderInfo = PaymentsHelpers.BuildMomoOrderInfo(payment, selectedFlow);
+                var extraData = PaymentsHelpers.BuildMomoExtraData(payment, userId, walletId);
+                var query = new GetMomoCheckoutUrlQuery(
+                    payment.Id,
+                    checkoutAmount,
+                    normalizedOrderId,
+                    orderInfo,
+                    userId,
+                    selectedFlow,
+                    clientIp,
+                    extraData,
+                    config);
+
+                var result = await _mediator.Send(query, cancellationToken);
+                if (result.IsFailure)
+                {
+                    return CreateErrorResponse(result.Error);
+                }
+
+                return Ok(new
+                {
+                    gateway = payment.Gateway,
+                    url = result.Value.PayUrl,
+                    meta = new
+                    {
+                        requestId = result.Value.RequestId,
+                        deeplink = result.Value.Deeplink,
+                        qrCodeUrl = result.Value.QrCodeUrl,
+                        signature = result.Value.Signature
+                    }
+                });
+            }
+
+            default:
+                return CreateErrorResponse(new Error(
+                    "Payment.GatewayNotSupported",
+                    $"Gateway '{payment.Gateway}' is not supported for checkout."));
+        }
+    }
     [AllowAnonymous]
     [HttpGet("depositWallet")]
     public async Task<IActionResult> WalletReturn(CancellationToken cancellationToken)
     {
-        var config = BuildVnPayConfiguration();
-        var parameters = Request.Query.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.Ordinal);
-        var userId = parameters.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out var parsedUserId)
-            ? parsedUserId
-            : (Guid?)null;
+        var parameters = Request.Query.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToString(),
+            StringComparer.OrdinalIgnoreCase);
 
-        var command = new ProcessPaymentGatewayReturnCommand(Gateway.Vnpay, parameters, config, userId);
+        if (!PaymentsHelpers.TryResolveGatewayContext(
+                parameters,
+                _vnPayOptions.Value,
+                _momoOptions.Value,
+                out var gateway,
+                out var configuration,
+                out var userId,
+                out var error))
+        {
+            return CreateErrorResponse(error ?? new Error("Payment.GatewayUnknown", "Unable to determine payment gateway from return payload."));
+        }
+
+        var command = new ProcessPaymentGatewayReturnCommand(gateway, parameters, configuration, userId);
         var commandResult = await _mediator.Send(command, cancellationToken);
         if (commandResult.IsFailure)
         {
@@ -177,44 +259,75 @@ public class PaymentsController : ApiController
             parameters["userId"] = commandResult.Value.UserId.Value.ToString();
         }
 
-        var query = new GetVNPayReturnViewQuery(parameters, config, commandResult.Value.UserId);
-        var result = await _mediator.Send(query, cancellationToken);
-        if (result.IsFailure)
+        switch (gateway)
         {
-            return CreateErrorResponse(result.Error);
-        }
+            case Gateway.Vnpay when configuration is VnPayConfiguration vnPayConfiguration:
+            {
+                var query = new GetVNPayReturnViewQuery(parameters, vnPayConfiguration, commandResult.Value.UserId);
+                var result = await _mediator.Send(query, cancellationToken);
+                if (result.IsFailure)
+                {
+                    return CreateErrorResponse(result.Error);
+                }
 
-        return Content(result.Value.HtmlContent, "text/html");
+                return Content(result.Value.HtmlContent, "text/html");
+            }
+
+            case Gateway.Momo:
+            {
+                var html = PaymentsHelpers.BuildMomoReturnHtml(parameters, commandResult.Value);
+                return Content(html, "text/html");
+            }
+
+            default:
+                return CreateErrorResponse(new Error(
+                    "Payment.GatewayNotSupported",
+                    $"Gateway '{gateway}' is not supported for wallet return."));
+        }
     }
 
     [AllowAnonymous]
     [HttpGet("booking")]
     public async Task<IActionResult> BookingReturn(CancellationToken cancellationToken)
     {
-        var config = BuildVnPayConfiguration();
-        var parameters = Request.Query.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.Ordinal);
-        var userId = parameters.TryGetValue("userId", out var userIdValue) && Guid.TryParse(userIdValue, out var parsedUserId)
-            ? parsedUserId
-            : (Guid?)null;
+        var parameters = Request.Query.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToString(),
+            StringComparer.OrdinalIgnoreCase);
 
-        var command = new ProcessPaymentGatewayReturnCommand(Gateway.Vnpay, parameters, config, userId);
+        if (!PaymentsHelpers.TryResolveGatewayContext(
+                parameters,
+                _vnPayOptions.Value,
+                _momoOptions.Value,
+                out var gateway,
+                out var configuration,
+                out var userId,
+                out var error))
+        {
+            return CreateErrorResponse(error ?? new Error("Payment.GatewayUnknown", "Unable to determine payment gateway from return payload."));
+        }
+
+        var command = new ProcessPaymentGatewayReturnCommand(gateway, parameters, configuration, userId);
         var commandResult = await _mediator.Send(command, cancellationToken);
         if (commandResult.IsFailure)
         {
             return CreateErrorResponse(commandResult.Error);
         }
 
-        Guid? paymentId = null;
-        if (TryResolvePaymentId(parameters, out var resolvedPaymentId))
+        if (commandResult.Value.UserId.HasValue)
         {
-            paymentId = resolvedPaymentId;
+            parameters["userId"] = commandResult.Value.UserId.Value.ToString();
         }
+
+        var paymentId = PaymentsHelpers.TryResolvePaymentId(parameters, out var resolvedPaymentId) ? resolvedPaymentId : (Guid?)null;
+        var resolvedUserId = commandResult.Value.UserId ?? userId;
 
         return Ok(new
         {
-            success = true,
+            success = commandResult.Value.TransactionCaptured,
             paymentId,
-            userId = commandResult.Value.UserId ?? userId
+            userId = resolvedUserId,
+            gateway
         });
     }
 
@@ -222,7 +335,7 @@ public class PaymentsController : ApiController
     [HttpGet("ipn")]
     public async Task<IActionResult> Ipn(CancellationToken cancellationToken)
     {
-        var config = BuildVnPayConfiguration();
+        var config = PaymentsHelpers.BuildVnPayConfiguration(_vnPayOptions.Value);
         var parameters = Request.Query.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.Ordinal);
 
         var command = new ProcessVnPayIpnCommand(parameters, config);
@@ -266,84 +379,9 @@ public class PaymentsController : ApiController
         return NoContent();
     }
 
-    private VnPayConfiguration BuildVnPayConfiguration()
-    {
-        var value = _vnPayOptions.Value;
-        return new VnPayConfiguration(
-            value.TmnCode,
-            value.HashSecret,
-            value.BaseUrl,
-            value.ReturnWalletUrl,
-            value.ReturnBookingUrl,
-            value.IpnUrl);
-    }
-
-    private string ResolveClientIp()
-    {
-        if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
-        {
-            var realIp = forwarded
-                .ToString()
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(realIp))
-            {
-                return realIp;
-            }
-        }
-
-        var remoteIp = HttpContext.Connection.RemoteIpAddress;
-        if (remoteIp != null)
-        {
-            if (remoteIp.IsIPv4MappedToIPv6)
-            {
-                remoteIp = remoteIp.MapToIPv4();
-            }
-
-            return remoteIp.ToString();
-        }
-
-        return "127.0.0.1";
-    }
-
     private IActionResult CreateErrorResponse(Error error)
     {
-        var statusCode = error.Code == VnPayErrors.ConfigurationMissing.Code
-            ? StatusCodes.Status500InternalServerError
-            : StatusCodes.Status400BadRequest;
-
+        var statusCode = PaymentsHelpers.ResolveErrorStatusCode(error);
         return StatusCode(statusCode, new { error.Code, error.Description });
-    }
-
-    private static bool TryResolvePaymentId(IReadOnlyDictionary<string, string> parameters, out Guid paymentId)
-    {
-        if (parameters.TryGetValue("vnp_TxnRef", out var txnRef) && Guid.TryParse(txnRef, out paymentId))
-        {
-            return true;
-        }
-
-        if (parameters.TryGetValue("vnp_OrderInfo", out var orderInfo))
-        {
-            var trailing = ExtractTrailingToken(orderInfo);
-            if (!string.IsNullOrWhiteSpace(trailing) && Guid.TryParse(trailing, out paymentId))
-            {
-                return true;
-            }
-        }
-
-        paymentId = Guid.Empty;
-        return false;
-    }
-
-    private static string? ExtractTrailingToken(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        return value
-            .Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .LastOrDefault();
     }
 }

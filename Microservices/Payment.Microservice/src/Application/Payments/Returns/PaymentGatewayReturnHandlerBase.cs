@@ -54,12 +54,15 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
 
         var parameters = new Dictionary<string, string>(context.QueryParameters, StringComparer.OrdinalIgnoreCase);
         var userId = ResolveUserId(parameters, context.UserId);
+        var signatureValid = ValidateSignature(parameters, config);
 
-        if (!ValidateSignature(parameters, config))
+        if (!signatureValid)
         {
             _logger.LogWarning("{Gateway} return signature invalid for payload {@Payload}", Gateway, parameters);
             return Result.Success(new PaymentGatewayReturnResult(false, userId));
         }
+
+        userId = ResolveUserId(parameters, userId);
 
         if (!TryResolvePaymentId(parameters, out var paymentId))
         {
