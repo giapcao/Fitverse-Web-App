@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Domain.Persistence.Enums;
 
 namespace Domain.Persistence.Models;
@@ -16,9 +14,9 @@ public partial class CoachProfile
 
     public decimal? ServiceRadiusKm { get; set; }
 
-    public string? KycNote { get; set; }
+    public KycStatus KycStatus { get; set; }    
 
-    public KycStatus KycStatus { get; set; }
+    public string? KycNote { get; set; }
 
     public decimal? RatingAvg { get; set; }
 
@@ -29,6 +27,63 @@ public partial class CoachProfile
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// URL ảnh đại diện của huấn luyện viên
+    /// </summary>
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// Ngày sinh (DATE)
+    /// </summary>
+    public DateOnly? BirthDate { get; set; }
+
+    /// <summary>
+    /// Cân nặng (kg), 0–500
+    /// </summary>
+    public decimal? WeightKg { get; set; }
+
+    /// <summary>
+    /// Chiều cao (cm), 0–300
+    /// </summary>
+    public decimal? HeightCm { get; set; }
+
+    /// <summary>
+    /// Giới tính: male/female/other/unspecified
+    /// </summary>
+    public string? Gender { get; set; }
+
+    /// <summary>
+    /// Khu vực/Nơi hoạt động chính
+    /// </summary>
+    public string? OperatingLocation { get; set; }
+
+    /// <summary>
+    /// Mã số thuế (10 hoặc 13 chữ số)
+    /// </summary>
+    public string? TaxCode { get; set; }
+
+    /// <summary>
+    /// CCCD/CMND (9 hoặc 12 chữ số)
+    /// </summary>
+    public string? CitizenId { get; set; }
+
+    /// <summary>
+    /// Ngày cấp CCCD/CMND
+    /// </summary>
+    public DateOnly? CitizenIssueDate { get; set; }
+
+    /// <summary>
+    /// Nơi cấp CCCD/CMND
+    /// </summary>
+    public string? CitizenIssuePlace { get; set; }
+
+    /// <summary>
+    /// Họ và tên
+    /// </summary>
+    public string? Fullname { get; set; }
+    
+    public string? Email { get; set; }
 
     public virtual ICollection<CoachCertification> CoachCertifications { get; set; } = new List<CoachCertification>();
 

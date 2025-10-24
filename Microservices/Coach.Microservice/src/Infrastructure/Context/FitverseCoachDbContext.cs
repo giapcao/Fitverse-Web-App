@@ -86,6 +86,7 @@ public partial class FitverseCoachDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("is_featured");
             entity.Property(e => e.MediaName).HasColumnName("media_name");
+            entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.MediaType)
                 .HasColumnType("media_type_enum")
                 .HasColumnName("media_type");
@@ -110,21 +111,61 @@ public partial class FitverseCoachDbContext : DbContext
 
             entity.HasIndex(e => new { e.RatingAvg, e.RatingCount }, "idx_coach_profile_rating").IsDescending();
 
+            entity.HasIndex(e => e.CitizenId, "uq_coach_profile_citizen_id")
+                .IsUnique()
+                .HasFilter("(citizen_id IS NOT NULL)");
+
+            entity.HasIndex(e => e.TaxCode, "uq_coach_profile_tax_code")
+                .IsUnique()
+                .HasFilter("(tax_code IS NOT NULL)");
+
             entity.Property(e => e.UserId)
                 .ValueGeneratedNever()
                 .HasColumnName("user_id");
+            entity.Property(e => e.AvatarUrl)
+                .HasComment("URL ảnh đại diện của huấn luyện viên")
+                .HasColumnName("avatar_url");
             entity.Property(e => e.BasePriceVnd).HasColumnName("base_price_vnd");
             entity.Property(e => e.Bio).HasColumnName("bio");
+            entity.Property(e => e.BirthDate)
+                .HasComment("Ngày sinh (DATE)")
+                .HasColumnName("birth_date");
+            entity.Property(e => e.CitizenId)
+                .HasMaxLength(12)
+                .HasComment("CCCD/CMND (9 hoặc 12 chữ số)")
+                .HasColumnName("citizen_id");
+            entity.Property(e => e.CitizenIssueDate)
+                .HasComment("Ngày cấp CCCD/CMND")
+                .HasColumnName("citizen_issue_date");
+            entity.Property(e => e.CitizenIssuePlace)
+                .HasComment("Nơi cấp CCCD/CMND")
+                .HasColumnName("citizen_issue_place");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
+            entity.Property(e => e.Email)
+                .HasColumnType("citext")
+                .HasColumnName("email");
+            entity.Property(e => e.Fullname)
+                .HasComment("Họ và tên")
+                .HasColumnName("fullname");
+            entity.Property(e => e.Gender)
+                .HasComment("Giới tính: male/female/other/unspecified")
+                .HasColumnName("gender");
+            entity.Property(e => e.HeightCm)
+                .HasPrecision(5, 2)
+                .HasComment("Chiều cao (cm), 0–300")
+                .HasColumnName("height_cm");
             entity.Property(e => e.IsPublic)
                 .HasDefaultValue(false)
                 .HasColumnName("is_public");
-            entity.Property(e => e.KycNote).HasColumnName("kyc_note");
             entity.Property(e => e.KycStatus)
                 .HasColumnType("kyc_status_enum")
                 .HasColumnName("kyc_status");
+            entity.Property(e => e.KycNote).HasColumnName("kyc_note");
+            entity.Property(e => e.OperatingLocation)
+                .HasComment("Khu vực/Nơi hoạt động chính")
+                .HasColumnName("operating_location");
             entity.Property(e => e.RatingAvg)
                 .HasPrecision(3, 2)
                 .HasDefaultValueSql("0.00")
@@ -136,9 +177,17 @@ public partial class FitverseCoachDbContext : DbContext
                 .HasPrecision(5, 2)
                 .HasDefaultValueSql("10.0")
                 .HasColumnName("service_radius_km");
+            entity.Property(e => e.TaxCode)
+                .HasMaxLength(20)
+                .HasComment("Mã số thuế (10 hoặc 13 chữ số)")
+                .HasColumnName("tax_code");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.WeightKg)
+                .HasPrecision(5, 2)
+                .HasComment("Cân nặng (kg), 0–500")
+                .HasColumnName("weight_kg");
             entity.Property(e => e.YearsExperience).HasColumnName("years_experience");
 
             entity.HasMany(d => d.Sports).WithMany(p => p.Coaches)

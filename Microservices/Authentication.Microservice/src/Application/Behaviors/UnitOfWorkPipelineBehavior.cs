@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Transactions;
 using Application.Abstractions.Messaging;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -37,14 +36,6 @@ public sealed class UnitOfWorkPipelineBehavior<TRequest, TResponse> : IPipelineB
             return await next();
         }
 
-        var transactionOptions = new TransactionOptions
-        {
-            IsolationLevel = IsolationLevel.ReadCommitted,
-            Timeout = TransactionManager.DefaultTimeout
-        };
-
-        using var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);
-
         TResponse response;
         try
         {
@@ -52,7 +43,7 @@ public sealed class UnitOfWorkPipelineBehavior<TRequest, TResponse> : IPipelineB
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Command {Command} threw an exception. Rolling back changes.", typeof(TRequest).Name);
+            _logger.LogError(ex, "Command {Command} threw an exception. Aborting persistence.", typeof(TRequest).Name);
             throw;
         }
 
@@ -66,11 +57,10 @@ public sealed class UnitOfWorkPipelineBehavior<TRequest, TResponse> : IPipelineB
         {
             var affected = await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogDebug("Command {Command} persisted {AffectedRows} changes.", typeof(TRequest).Name, affected);
-            scope.Complete();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Command {Command} failed during persistence. Rolling back changes.", typeof(TRequest).Name);
+            _logger.LogError(ex, "Command {Command} failed during persistence.", typeof(TRequest).Name);
             throw;
         }
 

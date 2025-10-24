@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using CoachCertificationMapper = Application.CoachCertifications.Handler.CoachCertificationMapping;
 using Application.Features;
 using Domain.Persistence.Models;
 
@@ -7,19 +8,51 @@ namespace Application.CoachProfiles.Handler;
 
 internal static class CoachProfileMapping
 {
+    public static CoachProfileSummaryDto ToSummaryDto(CoachProfile profile)
+    {
+        return new CoachProfileSummaryDto(
+            profile.UserId,
+            profile.Fullname,
+            profile.Email,
+            profile.AvatarUrl,
+            profile.AvatarUrl,
+            profile.OperatingLocation,
+            profile.BasePriceVnd,
+            profile.RatingAvg,
+            profile.RatingCount,
+            profile.IsPublic);
+    }
+
     public static CoachProfileDto ToDto(CoachProfile profile)
     {
         var media = profile.CoachMedia?.Select(CoachMediaMapping.ToDto).ToArray() ?? Array.Empty<CoachMediaDto>();
         var services = profile.CoachServices?.Select(CoachServiceMapping.ToDto).ToArray() ?? Array.Empty<CoachServiceDto>();
-        var kycRecords = profile.KycRecords?.Select(KycRecordMapping.ToDto).ToArray() ?? Array.Empty<KycRecordDto>();
-        var sportIds = profile.Sports?.Select(s => s.Id).ToArray() ?? Array.Empty<Guid>();
+        var certifications = profile.CoachCertifications?
+            .Select(CoachCertificationMapper.ToDto)
+            .ToArray() ?? Array.Empty<CoachCertificationDto>();
+        var sports = profile.Sports?
+            .Select(s => new CoachProfileSportDto(s.Id, s.DisplayName))
+            .ToArray() ?? Array.Empty<CoachProfileSportDto>();
 
         return new CoachProfileDto(
             profile.UserId,
+            profile.Fullname,
+            profile.Email,
             profile.Bio,
             profile.YearsExperience,
             profile.BasePriceVnd,
             profile.ServiceRadiusKm,
+            profile.AvatarUrl,
+            profile.AvatarUrl,
+            profile.BirthDate,
+            profile.WeightKg,
+            profile.HeightCm,
+            profile.Gender,
+            profile.OperatingLocation,
+            profile.TaxCode,
+            profile.CitizenId,
+            profile.CitizenIssueDate,
+            profile.CitizenIssuePlace,
             profile.KycNote,
             profile.KycStatus,
             profile.RatingAvg,
@@ -27,10 +60,10 @@ internal static class CoachProfileMapping
             profile.IsPublic,
             profile.CreatedAt,
             profile.UpdatedAt,
-            sportIds,
+            sports,
             media,
             services,
-            kycRecords);
+            certifications);
     }
 }
 
@@ -42,7 +75,9 @@ internal static class CoachMediaMapping
             medium.Id,
             medium.CoachId,
             medium.MediaName,
+            medium.Description,
             medium.MediaType,
+            medium.Url,
             medium.Url,
             medium.Status,
             medium.IsFeatured,
@@ -70,21 +105,5 @@ internal static class CoachServiceMapping
             service.IsActive,
             service.CreatedAt,
             service.UpdatedAt);
-    }
-}
-
-internal static class KycRecordMapping
-{
-    public static KycRecordDto ToDto(KycRecord record)
-    {
-        return new KycRecordDto(
-            record.Id,
-            record.CoachId,
-            record.IdDocumentUrl,
-            record.AdminNote,
-            record.Status,
-            record.SubmittedAt,
-            record.ReviewedAt,
-            record.ReviewerId);
     }
 }

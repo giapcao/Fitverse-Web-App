@@ -9,6 +9,7 @@ using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.KycRecords.Handler;
 
@@ -16,16 +17,17 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
 {
     private readonly IKycRecordRepository _kycRepository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
+    private const string DefaultAdminNote = "kyc_coach_profile";
 
     public CreateKycRecordCommandHandler(
         IKycRecordRepository kycRepository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork)
+        IFileStorageService fileStorageService)
     {
         _kycRepository = kycRepository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<KycRecordDto>> Handle(CreateKycRecordCommand request, CancellationToken cancellationToken)
@@ -36,23 +38,27 @@ public sealed class CreateKycRecordCommandHandler : ICommandHandler<CreateKycRec
             return Result.Failure<KycRecordDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
+        var adminNote = string.IsNullOrWhiteSpace(request.AdminNote)
+            ? DefaultAdminNote
+            : request.AdminNote.Trim();
+
         var record = new KycRecord
         {
             CoachId = request.CoachId,
             IdDocumentUrl = request.IdDocumentUrl,
-            AdminNote = request.AdminNote,
+            AdminNote = adminNote,
             Status = KycStatus.Pending,
             SubmittedAt = DateTime.UtcNow
         };
 
         profile.KycStatus = record.Status;
-        profile.KycNote = record.AdminNote;
+        profile.KycNote = adminNote;
         profile.UpdatedAt = DateTime.UtcNow;
 
         await _kycRepository.AddAsync(record, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _kycRepository.GetDetailedByIdAsync(record.Id, cancellationToken, asNoTracking: true) ?? record;
-        return Result.Success(KycRecordMapping.ToDto(created));
+        var dto = await KycRecordMapping.ToDtoWithSignedCoachAsync(created, _fileStorageService, cancellationToken).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }

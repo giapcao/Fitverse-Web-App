@@ -1,4 +1,3 @@
-using System.Linq;
 using Application.Features;
 using Domain.Persistence.Models;
 using Mapster;
@@ -13,12 +12,15 @@ public static class MappingConfig
         config.NewConfig<CoachCertification, CoachCertificationDto>();
         config.NewConfig<KycRecord, KycRecordDto>();
         config.NewConfig<Sport, SportDto>();
+        config.NewConfig<Sport, CoachProfileSportDto>()
+            .Map(dest => dest.SportId, src => src.Id)
+            .Map(dest => dest.SportName, src => src.DisplayName);
         config.NewConfig<CoachProfile, CoachProfileDto>()
             .Map(dest => dest.CoachId, src => src.UserId)
             .Map(dest => dest.Media, src => src.CoachMedia)
-            .Map(dest => dest.KycRecords, src => src.KycRecords)
+            .Map(dest => dest.Certifications, src => src.CoachCertifications)
             .Map(dest => dest.Services, src => src.CoachServices)
-            .Map(dest => dest.SportIds, src => src.Sports.Select(s => s.Id));
+            .Map(dest => dest.Sports, src => src.Sports);
         config.NewConfig<CoachService, CoachServiceDto>();
     }
 }

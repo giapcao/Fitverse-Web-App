@@ -8,19 +8,27 @@ using Domain.IRepositories;
 using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using SharedLibrary.Common;
+using SharedLibrary.Storage;
 using SharedLibrary.Common.ResponseModel;
+using MassTransit;
+using SharedLibrary.Contracts.CoachProfileCreating;
 
 namespace Application.CoachProfiles.Handler;
 
 public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoachProfileCommand, CoachProfileDto>
 {
     private readonly ICoachProfileRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
+    private readonly IPublishEndpoint _publishEndpoint;
 
-    public CreateCoachProfileCommandHandler(ICoachProfileRepository repository, IUnitOfWork unitOfWork)
+    public CreateCoachProfileCommandHandler(
+        ICoachProfileRepository repository,
+        IFileStorageService fileStorageService,
+        IPublishEndpoint publishEndpoint)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<CoachProfileDto>> Handle(CreateCoachProfileCommand request, CancellationToken cancellationToken)
@@ -32,13 +40,26 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         }
 
         var utcNow = DateTime.UtcNow;
+        var normalizedEmail = request.Email.Trim();
         var profile = new CoachProfile
         {
             UserId = request.CoachId,
+            Fullname = request.Fullname,
+            Email = normalizedEmail,
             Bio = request.Bio,
             YearsExperience = request.YearsExperience,
             BasePriceVnd = request.BasePriceVnd,
             ServiceRadiusKm = request.ServiceRadiusKm,
+            AvatarUrl = CoachProfileAvatarHelper.DefaultAvatar,
+            BirthDate = request.BirthDate,
+            WeightKg = request.WeightKg,
+            HeightCm = request.HeightCm,
+            Gender = request.Gender,
+            OperatingLocation = request.OperatingLocation,
+            TaxCode = request.TaxCode,
+            CitizenId = request.CitizenId,
+            CitizenIssueDate = request.CitizenIssueDate,
+            CitizenIssuePlace = request.CitizenIssuePlace,
             KycStatus = KycStatus.Pending,
             RatingAvg = 0m,
             RatingCount = 0,
@@ -48,9 +69,18 @@ public sealed class CreateCoachProfileCommandHandler : ICommandHandler<CreateCoa
         };
 
         await _repository.AddAsync(profile, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var created = await _repository.GetDetailedByUserIdAsync(profile.UserId, cancellationToken, asNoTracking: true) ?? profile;
-        return Result.Success(CoachProfileMapping.ToDto(created));
+        var dto = CoachProfileMapping.ToDto(created);
+        dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
+
+        await _publishEndpoint.Publish(new CoachProfileCreatingSagaStart
+        {
+            CorrelationId = Guid.NewGuid(),
+            CoachId = profile.UserId,
+            Role = "Coach"
+        }, cancellationToken);
+
+        return Result.Success(dto);
     }
 }

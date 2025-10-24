@@ -11,4 +11,5 @@ public record KycRecordDto(
     KycStatus Status,
     DateTime SubmittedAt,
     DateTime? ReviewedAt,
-    Guid? ReviewerId);
+    Guid? ReviewerId,
+    CoachProfileSummaryDto? Coach);

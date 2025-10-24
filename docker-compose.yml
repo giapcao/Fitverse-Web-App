@@ -22,6 +22,12 @@ services:
       REDIS_HOST: redis
       REDIS_PASSWORD: YOUR_PASSWORD
       REDIS_PORT: 6379
+      AwsS3__AccessKey: YOUR_AWS_ACCESS_KEY
+      AwsS3__SecretKey: YOUR_AWS_SECRET_KEY
+      AwsS3__BucketName: YOUR_BUCKET_NAME
+      AwsS3__Region: ap-southeast-1
+      AwsS3__ServiceUrl: http://localstack:4566
+      AwsS3__UseForcePathStyle: "true"
     depends_on:
       rabbit-mq:
         condition: service_healthy
@@ -53,10 +59,34 @@ services:
       REDIS_HOST: redis
       REDIS_PASSWORD: YOUR_PASSWORD
       REDIS_PORT: 6379
+      AwsS3__AccessKey: YOUR_AWS_ACCESS_KEY
+      AwsS3__SecretKey: YOUR_AWS_SECRET_KEY
+      AwsS3__BucketName: YOUR_BUCKET_NAME
+      AwsS3__Region: ap-southeast-1
+      AwsS3__ServiceUrl: http://localstack:4566
+      AwsS3__UseForcePathStyle: "true"
     depends_on:
       rabbit-mq:
         condition: service_healthy
       redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  booking-microservice:
+    build:
+      context: ./Microservices
+      dockerfile: ./Booking.Microservice/dockerfile
+      args:
+        SERVICE_NAME: Booking.Microservice
+    image: booking-microservice
+    container_name: booking-microservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5015
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=fitverse_booking;Username=YOUR_USERNAME;Password=YOUR_PASSWORD
+    depends_on:
+      rabbit-mq:
         condition: service_healthy
     networks:
       - app-network
@@ -76,6 +106,14 @@ services:
       USER_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
       GUEST_MICROSERVICE_HOST: YOUR_MICROSERVICE_HOST
       GUEST_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
+      BOOKING_MICROSERVICE_HOST: YOUR_MICROSERVICE_HOST
+      BOOKING_MICROSERVICE_PORT: YOUR_MICROSERVICE_PORT
+      AwsS3__AccessKey: YOUR_AWS_ACCESS_KEY
+      AwsS3__SecretKey: YOUR_AWS_SECRET_KEY
+      AwsS3__BucketName: YOUR_BUCKET_NAME
+      AwsS3__Region: ap-southeast-1
+      AwsS3__ServiceUrl: http://localstack:4566
+      AwsS3__UseForcePathStyle: "true"
     networks:
       - app-network
 

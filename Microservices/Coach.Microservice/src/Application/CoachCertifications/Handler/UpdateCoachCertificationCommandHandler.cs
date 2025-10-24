@@ -7,18 +7,21 @@ using Application.Features;
 using Domain.IRepositories;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.CoachCertifications.Handler;
 
 public sealed class UpdateCoachCertificationCommandHandler : ICommandHandler<UpdateCoachCertificationCommand, CoachCertificationDto>
 {
     private readonly ICoachCertificationRepository _repository;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UpdateCoachCertificationCommandHandler(ICoachCertificationRepository repository, IUnitOfWork unitOfWork)
+    public UpdateCoachCertificationCommandHandler(
+        ICoachCertificationRepository repository,
+        IFileStorageService fileStorageService)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<CoachCertificationDto>> Handle(UpdateCoachCertificationCommand request, CancellationToken cancellationToken)
@@ -33,28 +36,36 @@ public sealed class UpdateCoachCertificationCommandHandler : ICommandHandler<Upd
         certification.Issuer = request.Issuer ?? certification.Issuer;
         certification.IssuedOn = request.IssuedOn ?? certification.IssuedOn;
         certification.ExpiresOn = request.ExpiresOn ?? certification.ExpiresOn;
-        certification.FileUrl = request.FileUrl ?? certification.FileUrl;
 
-        if (!string.IsNullOrWhiteSpace(request.Status))
+        if (request.File is not null)
         {
-            certification.Status = request.Status!;
-        }
+            if (!string.IsNullOrWhiteSpace(certification.FileUrl))
+            {
+                await _fileStorageService.DeleteAsync(certification.FileUrl, cancellationToken).ConfigureAwait(false);
+            }
 
-        if (request.ReviewedBy.HasValue)
-        {
-            certification.ReviewedBy = request.ReviewedBy;
-            certification.ReviewedAt = request.ReviewedAt ?? DateTime.UtcNow;
+            var directory = request.File.Directory ?? request.Directory ?? "certifications";
+            var uploadResult = await _fileStorageService.UploadAsync(
+                new FileUploadRequest(
+                    certification.CoachId,
+                    request.File.Content,
+                    request.File.FileName,
+                    request.File.ContentType,
+                    directory),
+                cancellationToken).ConfigureAwait(false);
+
+            certification.FileUrl = uploadResult.Key;
         }
-        else if (request.ReviewedAt.HasValue)
+        else if (!string.IsNullOrWhiteSpace(request.FileUrl))
         {
-            certification.ReviewedAt = request.ReviewedAt;
+            certification.FileUrl = request.FileUrl;
         }
 
         certification.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-
         var updated = await _repository.GetDetailedByIdAsync(certification.Id, cancellationToken, asNoTracking: true) ?? certification;
-        return Result.Success(CoachCertificationMapping.ToDto(updated));
+        var dto = CoachCertificationMapping.ToDto(updated);
+        dto = await CoachCertificationFileUrlHelper.WithSignedFileUrlAsync(dto, _fileStorageService, cancellationToken);
+        return Result.Success(dto);
     }
 }

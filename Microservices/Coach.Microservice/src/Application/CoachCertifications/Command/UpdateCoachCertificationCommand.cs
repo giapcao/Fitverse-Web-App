@@ -11,6 +11,5 @@ public sealed record UpdateCoachCertificationCommand(
     DateOnly? IssuedOn,
     DateOnly? ExpiresOn,
     string? FileUrl,
-    string? Status,
-    Guid? ReviewedBy,
-    DateTime? ReviewedAt) : ICommand<CoachCertificationDto>;
+    string? Directory = "certifications",
+    CoachCertificationFile? File = null) : ICommand<CoachCertificationDto>;

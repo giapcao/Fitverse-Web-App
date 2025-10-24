@@ -1,3 +1,6 @@
+using System;
+using Amazon.S3;
+using Application.Sagas;
 using Domain.IRepositories;
 using Infrastructure.Common;
 using Infrastructure.Repositories;
@@ -5,8 +8,10 @@ using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using SharedLibrary.Storage;
 using SharedLibrary.Utils;
 
 namespace Infrastructure;
@@ -24,6 +29,12 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<EnvironmentConfig>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddSingleton<IAmazonS3>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AwsS3Config>>();
+            return S3FileStorageService.CreateS3Client(options.Value);
+        });
+        services.AddSingleton<IFileStorageService, S3FileStorageService>();
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             using var serviceProvider = services.BuildServiceProvider();
             var logger = serviceProvider.GetRequiredService<ILogger<AutoScaffold>>();
@@ -45,8 +56,16 @@ public static class DependencyInjection
             }
             services.AddMassTransit(busConfigurator =>
             {
+                busConfigurator.AddSagaStateMachine<CoachProfileCreatingSaga, CoachProfileCreatingSagaData>()
+                    .RedisRepository(r =>
+                    {
+                        r.DatabaseConfiguration($"{config.RedisHost}:{config.RedisPort},password={config.RedisPassword}");
+                        r.KeyPrefix = "coach-profile-creating-saga";
+                        r.Expiry = TimeSpan.FromMinutes(10);
+                    });
+
                 busConfigurator.SetKebabCaseEndpointNameFormatter();
-                // busConfigurator.AddConsumer<UserCreatedConsumer>();
+
                 busConfigurator.UsingRabbitMq((context, configurator) =>
                 {
                     if (config.IsRabbitMqCloud)

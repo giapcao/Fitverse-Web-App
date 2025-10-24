@@ -8,7 +8,9 @@ namespace Application.CoachMedia.Command;
 public sealed record UpdateCoachMediaCommand(
     Guid MediaId,
     string? MediaName,
+    string? Description,
     CoachMediaType? MediaType,
     string? Url,
-    bool? Status,
-    bool? IsFeatured) : ICommand<CoachMediaDto>;
+    bool? IsFeatured,
+    string? Directory = null,
+    CoachMediaFile? File = null) : ICommand<CoachMediaDto>;

@@ -74,6 +74,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
+builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
 builder.Services.AddDbContext<FitverseCoachDbContext>((sp, options) =>
 {
     var dbConfig = sp.GetRequiredService<IOptions<DatabaseConfig>>().Value;
@@ -139,6 +140,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
 

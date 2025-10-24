@@ -5,16 +5,19 @@ using Application.CoachProfiles.Query;
 using Application.Features;
 using Domain.IRepositories;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.CoachProfiles.Handler;
 
 public sealed class GetCoachProfileByIdQueryHandler : IQueryHandler<GetCoachProfileByIdQuery, CoachProfileDto>
 {
     private readonly ICoachProfileRepository _repository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public GetCoachProfileByIdQueryHandler(ICoachProfileRepository repository)
+    public GetCoachProfileByIdQueryHandler(ICoachProfileRepository repository, IFileStorageService fileStorageService)
     {
         _repository = repository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<CoachProfileDto>> Handle(GetCoachProfileByIdQuery request, CancellationToken cancellationToken)
@@ -25,6 +28,9 @@ public sealed class GetCoachProfileByIdQueryHandler : IQueryHandler<GetCoachProf
             return Result.Failure<CoachProfileDto>(new Error("CoachProfile.NotFound", $"Coach profile {request.CoachId} was not found."));
         }
 
-        return Result.Success(CoachProfileMapping.ToDto(profile));
+        var dto = CoachProfileMapping.ToDto(profile);
+        dto = await CoachProfileFileUrlHelper.WithSignedUrlsAsync(dto, _fileStorageService, cancellationToken);
+        return Result.Success(dto);
     }
 }
+

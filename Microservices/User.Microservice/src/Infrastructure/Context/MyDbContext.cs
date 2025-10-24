@@ -25,7 +25,7 @@ public partial class MyDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseNpgsql("Name=DefaultConnection");
+        => optionsBuilder.UseNpgsql("Name=BookingDb");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

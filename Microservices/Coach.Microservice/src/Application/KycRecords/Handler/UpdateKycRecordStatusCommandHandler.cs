@@ -1,11 +1,13 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
+using Application.CoachProfiles.Handler;
 using Application.Features;
 using Application.KycRecords.Command;
 using Domain.IRepositories;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.KycRecords.Handler;
 
@@ -13,26 +15,34 @@ public sealed class UpdateKycRecordStatusCommandHandler : ICommandHandler<Update
 {
     private readonly IKycRecordRepository _repository;
     private readonly ICoachProfileRepository _profileRepository;
-    private readonly IUnitOfWork _unitOfWork;
-
+    private readonly IFileStorageService _fileStorageService;
     public UpdateKycRecordStatusCommandHandler(
         IKycRecordRepository repository,
         ICoachProfileRepository profileRepository,
-        IUnitOfWork unitOfWork)
+        IFileStorageService fileStorageService)
     {
         _repository = repository;
         _profileRepository = profileRepository;
-        _unitOfWork = unitOfWork;
+        _fileStorageService = fileStorageService;
     }
 
-    public Task<Result<KycRecordDto>> Handle(UpdateKycRecordStatusCommand request, CancellationToken cancellationToken) =>
-        KycRecordStatusUpdater.UpdateAsync(
+    public async Task<Result<KycRecordDto>> Handle(UpdateKycRecordStatusCommand request, CancellationToken cancellationToken)
+    {
+        var result = await KycRecordStatusUpdater.UpdateAsync(
             _repository,
             _profileRepository,
-            _unitOfWork,
             request.RecordId,
             request.Status,
             request.AdminNote,
             request.ReviewerId,
             cancellationToken);
+
+        if (result.IsFailure || result.Value.Coach is null)
+        {
+            return result;
+        }
+
+        var signedCoach = await CoachProfileAvatarHelper.WithSignedAvatarAsync(result.Value.Coach, _fileStorageService, cancellationToken);
+        return Result.Success(result.Value with { Coach = signedCoach });
+    }
 }
