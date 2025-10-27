@@ -1,5 +1,6 @@
 using Application.Bookings.Commands;
 using FluentValidation;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Bookings.Validators;
 
@@ -25,5 +26,10 @@ public class CreatePendingSubscriptionBookingCommandValidator : AbstractValidato
         RuleFor(x => x.BookingDurationMinutes)
             .GreaterThan(0)
             .When(x => x.BookingDurationMinutes.HasValue);
+        RuleFor(x => x.Gateway).IsInEnum();
+        RuleFor(x => x.Flow).IsInEnum();
+        RuleFor(x => x.WalletId)
+            .NotEmpty()
+            .When(x => x.Flow == PaymentFlow.BookingByWallet);
     }
 }

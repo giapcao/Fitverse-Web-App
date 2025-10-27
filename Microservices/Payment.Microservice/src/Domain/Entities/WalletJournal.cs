@@ -12,7 +12,7 @@ public partial class WalletJournal
 
     public WalletJournalStatus Status { get; set; }
 
-    public WalletJournalType JournalType { get; set; }
+    public WalletJournalType Type { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

@@ -1,19 +1,22 @@
 using System;
 using System.Reflection;
 using Application;
+using Application.Options;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Domain.Enums;
 using Infrastructure;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Npgsql;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using SharedLibrary.Contracts.Payments;
 using SharedLibrary.Utils;
 using WebApi.Constants;
-using WebApi.Options;
+using WebApi.HostedServices;
 
 string solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? "";
 if (solutionDirectory != null)
@@ -42,6 +45,7 @@ builder.Services
 
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicyNames.VNPay, policy =>
@@ -58,27 +62,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Payment", Version = "v1" });
-    c.SwaggerDoc("vnpay", new OpenApiInfo { Title = "VNPay", Version = "v1" });
-
-    c.DocInclusionPredicate((docName, apiDesc) =>
-    {
-        var groupName = apiDesc.GroupName;
-
-        if (docName.Equals("vnpay", StringComparison.OrdinalIgnoreCase))
-        {
-            return string.Equals(groupName, "vnpay", StringComparison.OrdinalIgnoreCase);
-        }
-
-        if (docName.Equals("v1", StringComparison.OrdinalIgnoreCase))
-        {
-            return string.IsNullOrEmpty(groupName) ||
-                   string.Equals(groupName, docName, StringComparison.OrdinalIgnoreCase);
-        }
-
-        return false;
-    });
-
-
+    
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -107,7 +91,6 @@ builder.Services.AddSwaggerGen(c =>
 
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
-builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
 builder.Services.AddSingleton(sp =>
 {
     var databaseConfig = sp.GetRequiredService<IOptions<DatabaseConfig>>().Value;
@@ -124,10 +107,12 @@ builder.Services.AddSingleton(sp =>
     return dataSourceBuilder.Build();
 });
 builder.Services.Configure<VNPayOptions>(builder.Configuration.GetSection(VNPayOptions.SectionName));
+builder.Services.Configure<MomoOptions>(builder.Configuration.GetSection(MomoOptions.SectionName));
 builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()
     .AddInfrastructure();
+builder.Services.AddHostedService<PaymentReturnTimeoutService>();
 
 var app = builder.Build();
 
@@ -156,7 +141,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSwagger();
-
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    KnownNetworks = { }, 
+    KnownProxies  = { }
+});
 
 app.UseSerilogRequestLogging();
 
