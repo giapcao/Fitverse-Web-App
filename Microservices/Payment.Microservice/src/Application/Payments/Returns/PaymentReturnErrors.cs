@@ -1,5 +1,5 @@
-using Domain.Enums;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Payments.Returns;
 

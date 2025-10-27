@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Domain.Enums;
+using SharedLibrary.Contracts.Payments;
 
 namespace Domain.Entities;
 

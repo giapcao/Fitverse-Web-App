@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using Application.Payments;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.VNPay;
 

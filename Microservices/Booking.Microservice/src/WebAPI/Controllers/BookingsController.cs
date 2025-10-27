@@ -86,7 +86,8 @@ public class BookingsController : ApiController
         [FromBody] CreatePendingSubscriptionBookingCommand command,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(command, cancellationToken);
+        var enriched = command with { ClientIp = ResolveClientIp(HttpContext) };
+        var result = await _mediator.Send(enriched, cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);
@@ -94,6 +95,20 @@ public class BookingsController : ApiController
 
         var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
         return CreatedAtAction(nameof(GetBookingById), new { id = result.Value.Id, version }, result.Value);
+    }
+
+    [HttpGet("pending-package/{bookingId:guid}/payment-status")]
+    [ProducesResponseType(typeof(PendingPackagePaymentStatusDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPendingPackagePaymentStatus(Guid bookingId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetPendingPackagePaymentStatusQuery(bookingId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
     }
 
     [HttpPost("subscription-package")]
@@ -178,5 +193,33 @@ public class BookingsController : ApiController
         }
 
         return NoContent();
+    }
+    private static string ResolveClientIp(HttpContext context)
+    {
+        if (context.Request.Headers.TryGetValue("X-Forwarded-For", out var forwarded))
+        {
+            var candidate = forwarded
+                .ToString()
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        var remoteIp = context.Connection.RemoteIpAddress;
+        if (remoteIp != null)
+        {
+            if (remoteIp.IsIPv4MappedToIPv6)
+            {
+                remoteIp = remoteIp.MapToIPv4();
+            }
+
+            return remoteIp.ToString();
+        }
+
+        return "127.0.0.1";
     }
 }

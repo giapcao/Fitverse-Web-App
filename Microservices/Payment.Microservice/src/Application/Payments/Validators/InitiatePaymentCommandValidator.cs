@@ -1,7 +1,7 @@
 using System;
-using Application.Payments;
 using Application.Payments.Commands;
 using FluentValidation;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Payments.Validators;
 

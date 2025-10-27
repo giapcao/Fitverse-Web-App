@@ -1,4 +1,4 @@
-namespace Application.Payments;
+namespace SharedLibrary.Contracts.Payments;
 
 public enum PaymentFlow
 {
@@ -7,3 +7,4 @@ public enum PaymentFlow
     BookingByWallet = 2,
     Booking = 3
 }
+

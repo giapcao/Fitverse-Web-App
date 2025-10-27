@@ -3,11 +3,11 @@ using System.Globalization;
 using Application.Momo;
 using Application.Payments.Common;
 using Application.Payments.Returns;
-using Domain.Enums;
 using Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Momo.Returns;
 

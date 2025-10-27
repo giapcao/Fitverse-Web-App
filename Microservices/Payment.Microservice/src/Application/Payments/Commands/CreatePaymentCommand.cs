@@ -9,6 +9,7 @@ using Domain.Enums;
 using Domain.Repositories;
 using MapsterMapper;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Payments.Commands;
 

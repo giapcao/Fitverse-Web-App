@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
 using Application.Bookings.Commands;
 using Application.Features;
@@ -8,8 +5,9 @@ using Domain.IRepositories;
 using Domain.Persistence.Enums;
 using Domain.Persistence.Models;
 using MapsterMapper;
-using SharedLibrary.Common;
+using MassTransit;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Bookings;
 
 namespace Application.Bookings.Handlers;
 
@@ -20,17 +18,20 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
     private readonly ISubscriptionRepository _subscriptionRepository;
     private readonly IBookingRepository _bookingRepository;
     private readonly IMapper _mapper;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public CreatePendingSubscriptionBookingCommandHandler(
         ITimeslotRepository timeslotRepository,
         ISubscriptionRepository subscriptionRepository,
         IBookingRepository bookingRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IPublishEndpoint publishEndpoint)
     {
         _timeslotRepository = timeslotRepository;
         _subscriptionRepository = subscriptionRepository;
         _bookingRepository = bookingRepository;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<BookingDto>> Handle(
@@ -88,7 +89,6 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
             TimeslotId = timeslot.Id,
             StartAt = timeslot.StartAt,
             EndAt = timeslot.EndAt,
-            Status = BookingStatus.PendingPayment,
             GrossAmountVnd = request.BookingGrossAmountVnd,
             CommissionPct = request.BookingCommissionPct,
             CommissionVnd = request.BookingCommissionVnd,
@@ -109,6 +109,25 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
             booking.Id,
             cancellationToken,
             asNoTracking: true) ?? booking;
+
+        var correlationId = request.CorrelationId ?? Guid.NewGuid();
+        await _publishEndpoint.Publish(new PendingSubscriptionPackageSagaStart
+        {
+            CorrelationId = correlationId,
+            SubscriptionId = subscription.Id,
+            BookingId = booking.Id,
+            UserId = request.UserId,
+            CoachId = timeslot.CoachId,
+            ServiceId = request.ServiceId,
+            RequestedBookingId = booking.Id,
+            WalletId = request.WalletId,
+            TimeslotId = timeslot.Id,
+            AmountVnd = request.SubscriptionPriceGrossVnd,
+            Gateway = request.Gateway,
+            Flow = request.Flow,
+            StartedAtUtc = utcNow,
+            ClientIp = string.IsNullOrWhiteSpace(request.ClientIp) ? "127.0.0.1" : request.ClientIp
+        }, cancellationToken);
 
         var dto = _mapper.Map<BookingDto>(persisted);
         return Result.Success(dto);

@@ -2,15 +2,14 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Application.Momo;
-using Application.Payments;
 using Application.Payments.Common;
 using Application.Payments.Queries;
 using Application.Payments.Returns;
 using Application.Payments.VNPay;
 using Application.VNPay;
-using Domain.Enums;
+using Application.Options;
 using SharedLibrary.Common.ResponseModel;
-using WebApi.Options;
+using SharedLibrary.Contracts.Payments;
 
 namespace WebApi.Helper;
 

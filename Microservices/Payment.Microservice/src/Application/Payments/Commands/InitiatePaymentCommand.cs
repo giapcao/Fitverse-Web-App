@@ -7,6 +7,7 @@ using Domain.Enums;
 using Domain.Repositories;
 using MediatR;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Payments.Commands;
 

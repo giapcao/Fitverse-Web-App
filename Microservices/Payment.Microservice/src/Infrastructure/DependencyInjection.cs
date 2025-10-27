@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using Application.Sagas;
 using Domain.Enums;
 using Domain.Repositories;
 using Infrastructure.Common;
 using Infrastructure.Context;
 using Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using SharedLibrary.Contracts.Payments;
 using SharedLibrary.Utils;
 
 namespace Infrastructure;
@@ -90,6 +93,37 @@ public static class DependencyInjection
         {
             DotNetEnv.Env.Load(Path.Combine(solutionDirectory, ".env"));
         }
+
+        services.AddMassTransit(busConfigurator =>
+        {
+            busConfigurator.SetKebabCaseEndpointNameFormatter();
+
+            busConfigurator.AddSagaStateMachine<PendingSubscriptionPackageSaga, PendingSubscriptionPackageSagaData>()
+                .RedisRepository(repository =>
+                {
+                    repository.DatabaseConfiguration($"{environmentConfig.RedisHost}:{environmentConfig.RedisPort},password={environmentConfig.RedisPassword}");
+                    repository.KeyPrefix = "pending-subscription-package-saga";
+                    repository.Expiry = TimeSpan.FromMinutes(30);
+                });
+
+            busConfigurator.UsingRabbitMq((context, configurator) =>
+            {
+                if (environmentConfig.IsRabbitMqCloud)
+                {
+                    configurator.Host(environmentConfig.RabbitMqUrl);
+                }
+                else
+                {
+                    configurator.Host(new Uri($"rabbitmq://{environmentConfig.RabbitMqHost}:{environmentConfig.RabbitMqPort}/"), host =>
+                    {
+                        host.Username(environmentConfig.RabbitMqUser);
+                        host.Password(environmentConfig.RabbitMqPassword);
+                    });
+                }
+
+                configurator.ConfigureEndpoints(context);
+            });
+        });
 
         return services;
     }

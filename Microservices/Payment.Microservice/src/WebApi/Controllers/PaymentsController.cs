@@ -1,29 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Application.Momo.Queries;
+using Application.Options;
 using Application.Payments.Commands;
+using Application.Payments.Models;
 using Application.Payments.Queries;
-using Application.Payments;
 using Application.Payments.Returns;
-using Application.Payments.VNPay;
 using Application.Payments.VNPay.Queries;
 using Application.VNPay;
 using Application.VNPay.Commands;
-using Application.VNPay.Queries;
 using Asp.Versioning;
 using Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 using WebApi.Helper;
-using WebApi.Options;
 
 namespace WebApi.Controllers;
 
@@ -91,149 +83,32 @@ public class PaymentsController : ApiController
     [ProducesResponseType(typeof(InitiatePaymentCombinedResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(InitiatePaymentCombinedResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> InitiatePayment([FromBody] InitiatePaymentRequest request,
+    public async Task<IActionResult> InitiatePayment(
+        [FromBody] InitiatePaymentRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new InitiatePaymentCommand(
+        var command = new InitiatePendingSubscriptionPaymentCommand(
             request.AmountVnd,
             request.Gateway,
             request.BookingId,
-            request.Flow);
+            request.Flow,
+            request.UserId,
+            request.WalletId,
+            PaymentsHelpers.ResolveClientIp(HttpContext));
 
-        var initiationResult = await _mediator.Send(command, cancellationToken);
-        if (initiationResult.IsFailure)
+        var result = await _mediator.Send(command, cancellationToken);
+        if (result.IsFailure)
         {
-            return HandleFailure(initiationResult);
+            return HandleFailure(result);
         }
 
-        var initiation = initiationResult.Value;
-        CheckoutDetails? checkout = null;
-        var bookingWalletCaptured = false;
-
-        if (request.Flow == PaymentFlow.BookingByWallet)
-        {
-            if (!request.WalletId.HasValue || request.UserId == Guid.Empty)
-            {
-                return CreateErrorResponse(new Error(
-                    "Payment.BookingWalletDetailsMissing",
-                    "walletId and userId are required for booking-by-wallet payments."));
-            }
-
-            var captureCommand = new CaptureBookingWalletPaymentCommand(
-                request.WalletId.Value,
-                request.UserId,
-                initiation.WalletJournalId,
-                request.AmountVnd);
-
-            var captureResult = await _mediator.Send(captureCommand, cancellationToken);
-            if (captureResult.IsFailure)
-            {
-                return CreateErrorResponse(captureResult.Error);
-            }
-
-            bookingWalletCaptured = true;
-        }
-        else if (initiation.PaymentId.HasValue)
-        {
-            if (request.UserId == Guid.Empty)
-            {
-                return CreateErrorResponse(new Error(
-                    "Payment.UserIdRequired",
-                    "userId is required for gateway checkout."));
-            }
-
-            var paymentResult =
-                await _mediator.Send(new GetPaymentByIdQuery(initiation.PaymentId.Value), cancellationToken);
-            if (paymentResult.IsFailure)
-            {
-                return HandleFailure(paymentResult);
-            }
-
-            var payment = paymentResult.Value;
-            var clientIp = PaymentsHelpers.ResolveClientIp(HttpContext);
-            var checkoutAmount = payment.AmountVnd > 0 ? payment.AmountVnd : request.AmountVnd;
-
-            switch (payment.Gateway)
-            {
-                case Gateway.Vnpay:
-                {
-                    var config = PaymentsHelpers.BuildVnPayConfiguration(_vnPayOptions.Value);
-                    var query = new GetVnPayCheckoutUrlQuery(
-                        checkoutAmount,
-                        payment.Id.ToString(),
-                        clientIp,
-                        request.WalletId,
-                        request.UserId,
-                        request.Flow,
-                        config,
-                        DateTime.UtcNow);
-
-                    var checkoutResult = await _mediator.Send(query, cancellationToken);
-                    if (checkoutResult.IsFailure)
-                    {
-                        return CreateErrorResponse(checkoutResult.Error);
-                    }
-
-                    checkout = new CheckoutDetails(payment.Gateway, checkoutResult.Value, null);
-                    break;
-                }
-
-                case Gateway.Momo:
-                {
-                    var config = PaymentsHelpers.BuildMomoConfiguration(_momoOptions.Value);
-                    var orderInfo = PaymentsHelpers.BuildMomoOrderInfo(payment, request.Flow);
-                    var extraData = PaymentsHelpers.BuildMomoExtraData(payment, request.UserId, request.WalletId);
-                    var query = new GetMomoCheckoutUrlQuery(
-                        payment.Id,
-                        checkoutAmount,
-                        payment.Id.ToString(),
-                        orderInfo,
-                        request.UserId,
-                        request.Flow,
-                        clientIp,
-                        extraData,
-                        config);
-
-                    var checkoutResult = await _mediator.Send(query, cancellationToken);
-                    if (checkoutResult.IsFailure)
-                    {
-                        return CreateErrorResponse(checkoutResult.Error);
-                    }
-
-                    var momo = checkoutResult.Value;
-                    checkout = new CheckoutDetails(
-                        payment.Gateway,
-                        momo.PayUrl,
-                        new MomoCheckoutMeta(
-                            momo.RequestId,
-                            momo.Deeplink,
-                            momo.QrCodeUrl,
-                            momo.Signature));
-                    break;
-                }
-
-                default:
-                    return CreateErrorResponse(new Error(
-                        "Payment.GatewayNotSupported",
-                        $"Gateway '{payment.Gateway}' is not supported for checkout."));
-            }
-        }
-
-        var response = new InitiatePaymentCombinedResponse(
-            initiation.PaymentId,
-            initiation.WalletJournalId,
-            initiation.PaymentStatus,
-            initiation.WalletJournalStatus,
-            initiation.WalletJournalType,
-            checkout,
-            bookingWalletCaptured);
-
-        if (initiation.PaymentId.HasValue)
+        var response = result.Value;
+        if (response.PaymentId.HasValue)
         {
             var version = HttpContext.GetRequestedApiVersion()?.ToString() ?? "1.0";
             return CreatedAtAction(
                 nameof(GetPaymentById),
-                new { id = initiation.PaymentId.Value, version },
+                new { id = response.PaymentId.Value, version },
                 response);
         }
 
@@ -399,31 +274,3 @@ public class PaymentsController : ApiController
         return StatusCode(statusCode, new { error.Code, error.Description });
     }
 }
-
-public sealed record InitiatePaymentRequest(
-    long AmountVnd,
-    Gateway Gateway,
-    Guid? BookingId,
-    PaymentFlow Flow,
-    Guid UserId,
-    Guid? WalletId);
-
-public sealed record InitiatePaymentCombinedResponse(
-    Guid? PaymentId,
-    Guid WalletJournalId,
-    PaymentStatus PaymentStatus,
-    WalletJournalStatus WalletJournalStatus,
-    WalletJournalType WalletJournalType,
-    CheckoutDetails? Checkout,
-    bool BookingWalletCaptured);
-
-public sealed record CheckoutDetails(
-    Gateway Gateway,
-    string Url,
-    MomoCheckoutMeta? Momo);
-
-public sealed record MomoCheckoutMeta(
-    string? RequestId,
-    string? Deeplink,
-    string? QrCodeUrl,
-    string? Signature);

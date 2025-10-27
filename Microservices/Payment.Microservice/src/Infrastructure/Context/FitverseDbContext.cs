@@ -1,6 +1,7 @@
 ﻿using Domain.Entities;
 using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using SharedLibrary.Contracts.Payments;
 
 namespace Infrastructure.Context;
 

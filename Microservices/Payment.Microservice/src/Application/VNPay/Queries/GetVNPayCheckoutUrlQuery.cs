@@ -1,10 +1,10 @@
 using System.Net;
 using System.Net.Sockets;
 using Application.Abstractions.Messaging;
-using Application.Payments;
 using Application.Payments.VNPay;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.VNPay.Queries;
 

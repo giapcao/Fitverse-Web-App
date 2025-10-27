@@ -6,9 +6,9 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Abstractions.Messaging;
-using Application.Payments;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.Momo.Queries;
 

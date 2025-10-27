@@ -1,6 +1,6 @@
 using NpgsqlTypes;
 
-namespace Domain.Enums;
+namespace SharedLibrary.Contracts.Payments;
 
 public enum Gateway
 {
@@ -16,3 +16,4 @@ public enum Gateway
     [PgName("test")]
     Test
 }
+

@@ -1,5 +1,5 @@
-using Application.Payments;
 using Application.Payments.Common;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.VNPay;
 

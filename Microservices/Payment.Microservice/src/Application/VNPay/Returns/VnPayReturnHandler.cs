@@ -1,11 +1,11 @@
 using System.Globalization;
 using Application.Payments.Returns;
 using Application.Payments.VNPay;
-using Domain.Enums;
 using Domain.Repositories;
 using Microsoft.Extensions.Logging;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Contracts.Payments;
 
 namespace Application.VNPay.Returns;
 

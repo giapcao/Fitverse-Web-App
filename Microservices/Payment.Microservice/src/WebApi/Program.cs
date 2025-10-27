@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using Application;
+using Application.Options;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Domain.Enums;
@@ -12,10 +13,10 @@ using Npgsql;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using SharedLibrary.Contracts.Payments;
 using SharedLibrary.Utils;
 using WebApi.Constants;
 using WebApi.HostedServices;
-using WebApi.Options;
 
 string solutionDirectory = Directory.GetParent(Directory.GetCurrentDirectory())?.FullName ?? "";
 if (solutionDirectory != null)

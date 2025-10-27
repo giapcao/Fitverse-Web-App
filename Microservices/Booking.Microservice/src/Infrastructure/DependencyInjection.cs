@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using Application.Common.Stores;
+using Application.Consumers;
 using Domain.IRepositories;
 using Infrastructure.Common;
 using Infrastructure.Repositories;
@@ -27,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddSingleton<EnvironmentConfig>();
+        services.AddSingleton<IPendingPackagePaymentStatusStore, PendingPackagePaymentStatusStore>();
 
         using var serviceProvider = services.BuildServiceProvider();
         var logger = serviceProvider.GetRequiredService<ILogger<AutoScaffold>>();
@@ -51,6 +54,9 @@ public static class DependencyInjection
         services.AddMassTransit(busConfigurator =>
         {
             busConfigurator.SetKebabCaseEndpointNameFormatter();
+            busConfigurator.AddConsumer<PendingSubscriptionPackagePaymentSucceededConsumer>();
+            busConfigurator.AddConsumer<PendingSubscriptionPackagePaymentFailedConsumer>();
+            busConfigurator.AddConsumer<PendingSubscriptionPackagePaymentReadyConsumer>();
             busConfigurator.UsingRabbitMq((context, configurator) =>
             {
                 if (config.IsRabbitMqCloud)
