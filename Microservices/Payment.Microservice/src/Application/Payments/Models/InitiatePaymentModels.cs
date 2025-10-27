@@ -24,10 +24,16 @@ public sealed record InitiatePaymentCombinedResponse(
 public sealed record CheckoutDetails(
     Gateway Gateway,
     string Url,
-    MomoCheckoutMeta? Momo);
+    MomoCheckoutMeta? Momo,
+    PayOsCheckoutMeta? PayOs);
 
 public sealed record MomoCheckoutMeta(
     string? RequestId,
     string? Deeplink,
     string? QrCodeUrl,
     string? Signature);
+
+public sealed record PayOsCheckoutMeta(
+    long OrderCode,
+    string? PaymentLinkId,
+    string? QrCodeUrl);

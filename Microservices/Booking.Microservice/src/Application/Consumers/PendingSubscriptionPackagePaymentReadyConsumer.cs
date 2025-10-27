@@ -33,6 +33,9 @@ public sealed class PendingSubscriptionPackagePaymentReadyConsumer
             message.MomoDeeplink,
             message.MomoQrCodeUrl,
             message.MomoSignature,
+            message.PayOsOrderCode,
+            message.PayOsPaymentLinkId,
+            message.PayOsQrCodeUrl,
             message.WalletCaptured,
             message.ReadyAtUtc);
 

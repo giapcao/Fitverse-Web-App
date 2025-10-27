@@ -11,5 +11,8 @@ public sealed record PendingPackagePaymentStatusDto(
     string? MomoDeeplink,
     string? MomoQrCodeUrl,
     string? MomoSignature,
+    long? PayOsOrderCode,
+    string? PayOsPaymentLinkId,
+    string? PayOsQrCodeUrl,
     bool WalletCaptured,
     DateTime ReadyAtUtc);

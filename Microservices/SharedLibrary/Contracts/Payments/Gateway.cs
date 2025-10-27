@@ -13,7 +13,9 @@ public enum Gateway
     [PgName("vnpay")]
     Vnpay,
 
+    [PgName("payos")]
+    Payos,
+
     [PgName("test")]
     Test
 }
-

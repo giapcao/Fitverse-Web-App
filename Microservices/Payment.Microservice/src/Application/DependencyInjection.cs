@@ -2,6 +2,7 @@ using Application.Behaviors;
 using Application.Common.Mapper;
 using Application.Momo.Returns;
 using Application.Payments.Returns;
+using Application.PayOs.Returns;
 using Application.VNPay.Returns;
 using FluentValidation;
 using MediatR;
@@ -30,6 +31,7 @@ namespace Application
             services.AddValidatorsFromAssembly(assembly, includeInternalTypes: true);
             services.AddScoped<IPaymentGatewayReturnHandler, VnPayReturnHandler>();
             services.AddScoped<IPaymentGatewayReturnHandler, MomoReturnHandler>();
+            services.AddScoped<IPaymentGatewayReturnHandler, PayOsReturnHandler>();
 
             return services;
         }

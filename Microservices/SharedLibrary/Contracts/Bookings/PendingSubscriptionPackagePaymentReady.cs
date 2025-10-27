@@ -15,7 +15,9 @@ public class PendingSubscriptionPackagePaymentReady
     public string? MomoDeeplink { get; set; }
     public string? MomoQrCodeUrl { get; set; }
     public string? MomoSignature { get; set; }
+    public long? PayOsOrderCode { get; set; }
+    public string? PayOsPaymentLinkId { get; set; }
+    public string? PayOsQrCodeUrl { get; set; }
     public bool WalletCaptured { get; set; }
     public DateTime ReadyAtUtc { get; set; }
 }
-

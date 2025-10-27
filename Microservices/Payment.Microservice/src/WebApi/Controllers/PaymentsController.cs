@@ -6,6 +6,7 @@ using Application.Payments.Returns;
 using Application.Payments.VNPay.Queries;
 using Application.VNPay;
 using Application.VNPay.Commands;
+using Application.PayOs;
 using Asp.Versioning;
 using Domain.Enums;
 using MediatR;
@@ -26,14 +27,17 @@ public class PaymentsController : ApiController
 {
     private readonly IOptions<VNPayOptions> _vnPayOptions;
     private readonly IOptions<MomoOptions> _momoOptions;
+    private readonly IOptions<PayOsOptions> _payOsOptions;
 
     public PaymentsController(
         IMediator mediator,
         IOptions<VNPayOptions> vnPayOptions,
-        IOptions<MomoOptions> momoOptions) : base(mediator)
+        IOptions<MomoOptions> momoOptions,
+        IOptions<PayOsOptions> payOsOptions) : base(mediator)
     {
         _vnPayOptions = vnPayOptions;
         _momoOptions = momoOptions;
+        _payOsOptions = payOsOptions;
     }
 
     [HttpGet]
@@ -128,6 +132,7 @@ public class PaymentsController : ApiController
                 parameters,
                 _vnPayOptions.Value,
                 _momoOptions.Value,
+                _payOsOptions.Value,
                 out var gateway,
                 out var configuration,
                 out var userId,
@@ -168,6 +173,12 @@ public class PaymentsController : ApiController
                 return Content(html, "text/html");
             }
 
+            case Gateway.Payos:
+            {
+                var html = PaymentsHelpers.BuildPayOsReturnHtml(parameters, commandResult.Value);
+                return Content(html, "text/html");
+            }
+
             default:
                 return CreateErrorResponse(new Error(
                     "Payment.GatewayNotSupported",
@@ -188,6 +199,7 @@ public class PaymentsController : ApiController
                 parameters,
                 _vnPayOptions.Value,
                 _momoOptions.Value,
+                _payOsOptions.Value,
                 out var gateway,
                 out var configuration,
                 out var userId,

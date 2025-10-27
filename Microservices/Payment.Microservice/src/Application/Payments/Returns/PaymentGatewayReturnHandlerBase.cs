@@ -131,7 +131,7 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
             return Result.Success(new PaymentGatewayReturnResult(false, userId));
         }
 
-        var walletResolution = await ResolveWalletAsync(userId, payment.Id, cancellationToken);
+        var walletResolution = await ResolveWalletAsync(parameters, userId, payment.Id, cancellationToken);
         if (!walletResolution.HasUserId)
         {
             return Result.Success(new PaymentGatewayReturnResult(false, null));
@@ -236,35 +236,52 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
     }
 
     private async Task<WalletResolution> ResolveWalletAsync(
+        IReadOnlyDictionary<string, string> parameters,
         Guid? userIdHint,
         Guid paymentId,
         CancellationToken cancellationToken)
     {
-        Wallet? wallet = null;
+        var walletIdHint = ResolveWalletId(parameters);
+        if (walletIdHint.HasValue)
+        {
+            var wallet = await FindWalletAsync(walletIdHint.Value, cancellationToken);
+            if (wallet is not null)
+            {
+                var resolvedUserIdForWallet = userIdHint ?? wallet.UserId;
+                return new WalletResolution(wallet.Id, resolvedUserIdForWallet, true);
+            }
+
+            if (userIdHint.HasValue)
+            {
+                return new WalletResolution(walletIdHint, userIdHint, true);
+            }
+        }
+
+        Wallet? fallbackWallet = null;
 
         if (userIdHint.HasValue)
         {
-            wallet = await FindWalletByUserAsync(userIdHint.Value, cancellationToken);
+            fallbackWallet = await FindWalletByUserAsync(userIdHint.Value, cancellationToken);
         }
 
-        if (wallet is null)
+        if (fallbackWallet is null)
         {
-            wallet = await ResolveWalletFromLedgerAsync(paymentId, cancellationToken);
-            if (wallet is not null && userIdHint.HasValue && wallet.UserId != userIdHint.Value)
+            fallbackWallet = await ResolveWalletFromLedgerAsync(paymentId, cancellationToken);
+            if (fallbackWallet is not null && userIdHint.HasValue && fallbackWallet.UserId != userIdHint.Value)
             {
                 _logger.LogInformation(
                     "{Gateway} return located wallet {WalletId} via ledger for payment {PaymentId} but it belongs to user {WalletUserId}",
                     Gateway,
-                    wallet.Id,
+                    fallbackWallet.Id,
                     paymentId,
-                    wallet.UserId);
+                    fallbackWallet.UserId);
             }
         }
 
-        if (wallet is not null)
+        if (fallbackWallet is not null)
         {
-            var resolvedUserId = userIdHint ?? wallet.UserId;
-            return new WalletResolution(wallet.Id, resolvedUserId, true);
+            var resolvedUserId = userIdHint ?? fallbackWallet.UserId;
+            return new WalletResolution(fallbackWallet.Id, resolvedUserId, true);
         }
 
         if (!userIdHint.HasValue)
@@ -274,6 +291,17 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
         }
 
         return new WalletResolution(null, userIdHint, true);
+    }
+
+    private static Guid? ResolveWalletId(IReadOnlyDictionary<string, string> parameters)
+    {
+        if (parameters.TryGetValue("walletId", out var walletIdValue) &&
+            Guid.TryParse(walletIdValue, out var walletId))
+        {
+            return walletId;
+        }
+
+        return null;
     }
 
     private async Task UpdateJournalsAsync(Guid paymentId, WalletJournalStatus status, DateTime? postedAt, CancellationToken cancellationToken)
