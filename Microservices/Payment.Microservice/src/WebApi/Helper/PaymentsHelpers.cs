@@ -8,6 +8,7 @@ using Application.Payments.Returns;
 using Application.Payments.VNPay;
 using Application.VNPay;
 using Application.Options;
+using Application.PayOs;
 using SharedLibrary.Common.ResponseModel;
 using SharedLibrary.Contracts.Payments;
 
@@ -85,10 +86,16 @@ public static class PaymentsHelpers
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
     }
 
+    public static PayOsConfiguration BuildPayOsConfiguration(PayOsOptions value)
+    {
+        return PayOsConfiguration.FromOptions(value);
+    }
+
     public static bool TryResolveGatewayContext(
         Dictionary<string, string> parameters,
         VNPayOptions vnPayOptions,
         MomoOptions momoOptions,
+        PayOsOptions payOsOptions,
         out Gateway gateway,
         out IPaymentGatewayConfiguration configuration,
         out Guid? userId,
@@ -119,6 +126,11 @@ public static class PaymentsHelpers
                 userId = null;
                 return true;
 
+            case Gateway.Payos:
+                configuration = BuildPayOsConfiguration(payOsOptions);
+                userId = ResolveUserIdParameter(parameters);
+                return true;
+
             default:
                 configuration = default!;
                 userId = null;
@@ -142,6 +154,13 @@ public static class PaymentsHelpers
             (parameters.ContainsKey("orderId") && parameters.ContainsKey("signature")))
         {
             return Gateway.Momo;
+        }
+
+        if (parameters.ContainsKey("orderCode") &&
+            parameters.ContainsKey("code") &&
+            parameters.ContainsKey("status"))
+        {
+            return Gateway.Payos;
         }
 
         return null;
@@ -273,10 +292,58 @@ public static class PaymentsHelpers
         return error.Code switch
         {
             var code when code == VnPayErrors.ConfigurationMissing.Code ||
-                          code == MomoErrors.ConfigurationMissing.Code
+                          code == MomoErrors.ConfigurationMissing.Code ||
+                          code == PayOsErrors.ConfigurationMissing.Code
                 => StatusCodes.Status500InternalServerError,
             _ => StatusCodes.Status400BadRequest
         };
+    }
+
+    public static string BuildPayOsReturnHtml(
+        IReadOnlyDictionary<string, string> parameters,
+        PaymentGatewayReturnResult commandResult)
+    {
+        var isSuccess = commandResult.TransactionCaptured;
+        var title = isSuccess ? "Payment Successful" : "Payment Failed";
+
+        parameters.TryGetValue("code", out var code);
+        parameters.TryGetValue("status", out var status);
+        parameters.TryGetValue("orderCode", out var orderCode);
+        parameters.TryGetValue("__payos_reference", out var reference);
+        if (string.IsNullOrWhiteSpace(reference) && parameters.TryGetValue("id", out var id))
+        {
+            reference = id;
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("<!DOCTYPE html>");
+        builder.AppendLine("<html lang=\"en\">");
+        builder.AppendLine("<head>");
+        builder.AppendLine("    <meta charset=\"utf-8\" />");
+        builder.AppendLine($"    <title>{title}</title>");
+        builder.AppendLine("    <style>");
+        builder.AppendLine("        body { font-family: Arial, sans-serif; margin: 40px; }");
+        builder.AppendLine("        .status { max-width: 480px; margin: 0 auto; }");
+        builder.AppendLine("        .status h1 { font-size: 28px; }");
+        builder.AppendLine("        .status p { font-size: 16px; }");
+        builder.AppendLine("        dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; }");
+        builder.AppendLine("        dt { font-weight: bold; }");
+        builder.AppendLine("    </style>");
+        builder.AppendLine("</head>");
+        builder.AppendLine("<body>");
+        builder.AppendLine("    <div class=\"status\">");
+        builder.AppendLine($"        <h1>{title}</h1>");
+        builder.AppendLine($"        <p>The PayOS transaction has {(isSuccess ? "completed successfully." : "not been completed.")}</p>");
+        builder.AppendLine("        <dl>");
+        builder.AppendLine($"            <dt>Status:</dt><dd>{status}</dd>");
+        builder.AppendLine($"            <dt>Code:</dt><dd>{code}</dd>");
+        builder.AppendLine($"            <dt>Order Code:</dt><dd>{orderCode}</dd>");
+        builder.AppendLine($"            <dt>Reference:</dt><dd>{reference}</dd>");
+        builder.AppendLine("        </dl>");
+        builder.AppendLine("    </div>");
+        builder.AppendLine("</body>");
+        builder.AppendLine("</html>");
+        return builder.ToString();
     }
 
     public static bool TryResolvePaymentId(IReadOnlyDictionary<string, string> parameters, out Guid paymentId)

@@ -124,6 +124,9 @@ public class PendingSubscriptionPackageSaga : MassTransitStateMachine<PendingSub
                 MomoDeeplink = checkout?.Momo?.Deeplink,
                 MomoQrCodeUrl = checkout?.Momo?.QrCodeUrl,
                 MomoSignature = checkout?.Momo?.Signature,
+                PayOsOrderCode = checkout?.PayOs?.OrderCode,
+                PayOsPaymentLinkId = checkout?.PayOs?.PaymentLinkId,
+                PayOsQrCodeUrl = checkout?.PayOs?.QrCodeUrl,
                 WalletCaptured = walletCaptured,
                 ReadyAtUtc = DateTime.UtcNow
             }, consumeContext.CancellationToken);

@@ -108,6 +108,7 @@ builder.Services.AddSingleton(sp =>
 });
 builder.Services.Configure<VNPayOptions>(builder.Configuration.GetSection(VNPayOptions.SectionName));
 builder.Services.Configure<MomoOptions>(builder.Configuration.GetSection(MomoOptions.SectionName));
+builder.Services.Configure<PayOsOptions>(builder.Configuration.GetSection(PayOsOptions.SectionName));
 builder.Services.AddCompanyJwtAuth(builder.Configuration);
 builder.Services
     .AddApplication()

@@ -5,6 +5,8 @@ using Application.Abstractions.Messaging;
 using Application.Momo;
 using Application.Momo.Queries;
 using Application.Options;
+using Application.PayOs;
+using Application.PayOs.Queries;
 using Application.Payments.Models;
 using Application.Payments.Queries;
 using Application.VNPay;
@@ -32,15 +34,18 @@ internal sealed class InitiatePendingSubscriptionPaymentCommandHandler
     private readonly IMediator _mediator;
     private readonly IOptions<VNPayOptions> _vnPayOptions;
     private readonly IOptions<MomoOptions> _momoOptions;
+    private readonly IOptions<PayOsOptions> _payOsOptions;
 
     public InitiatePendingSubscriptionPaymentCommandHandler(
         IMediator mediator,
         IOptions<VNPayOptions> vnPayOptions,
-        IOptions<MomoOptions> momoOptions)
+        IOptions<MomoOptions> momoOptions,
+        IOptions<PayOsOptions> payOsOptions)
     {
         _mediator = mediator;
         _vnPayOptions = vnPayOptions;
         _momoOptions = momoOptions;
+        _payOsOptions = payOsOptions;
     }
 
     public async Task<Result<InitiatePaymentCombinedResponse>> Handle(
@@ -146,7 +151,7 @@ internal sealed class InitiatePendingSubscriptionPaymentCommandHandler
                         return Result.Failure<InitiatePaymentCombinedResponse>(vnPayCheckoutResult.Error);
                     }
 
-                    checkout = new CheckoutDetails(payment.Gateway, vnPayCheckoutResult.Value, null);
+                    checkout = new CheckoutDetails(payment.Gateway, vnPayCheckoutResult.Value, null, null);
                     break;
 
                 case Gateway.Momo:
@@ -199,7 +204,48 @@ internal sealed class InitiatePendingSubscriptionPaymentCommandHandler
                             momoCheckoutResult.Value.RequestId,
                             momoCheckoutResult.Value.Deeplink,
                             momoCheckoutResult.Value.QrCodeUrl,
-                            momoCheckoutResult.Value.Signature));
+                            momoCheckoutResult.Value.Signature),
+                        null);
+                    break;
+
+                case Gateway.Payos:
+                    var payOsOptions = _payOsOptions.Value;
+                    var payOsConfig = PayOsConfiguration.FromOptions(payOsOptions);
+
+                    if (!payOsConfig.IsConfiguredFor(request.Flow))
+                    {
+                        return Result.Failure<InitiatePaymentCombinedResponse>(PayOsErrors.ConfigurationMissing);
+                    }
+
+                    var orderCode = PayOsHelper.GenerateOrderCode(payment.Id);
+                    var payOsBookingId = payment.BookingId == Guid.Empty ? (Guid?)null : payment.BookingId;
+                    var description = PayOsHelper.BuildDescription(payment.Id, orderCode, request.Flow, payOsBookingId);
+
+                    var payOsQuery = new CreatePayOsPaymentLinkQuery(
+                        initiation.PaymentId.Value,
+                        request.AmountVnd,
+                        request.Flow,
+                        payOsBookingId,
+                        request.UserId,
+                        request.WalletId,
+                        payOsConfig,
+                        orderCode,
+                        description);
+
+                    var payOsResult = await _mediator.Send(payOsQuery, cancellationToken);
+                    if (payOsResult.IsFailure)
+                    {
+                        return Result.Failure<InitiatePaymentCombinedResponse>(payOsResult.Error);
+                    }
+
+                    checkout = new CheckoutDetails(
+                        payment.Gateway,
+                        payOsResult.Value.Result.checkoutUrl,
+                        null,
+                        new PayOsCheckoutMeta(
+                            payOsResult.Value.OrderCode,
+                            payOsResult.Value.Result.paymentLinkId,
+                            payOsResult.Value.Result.qrCode));
                     break;
 
                 default:
