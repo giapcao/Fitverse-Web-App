@@ -88,7 +88,8 @@ public sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingC
                 return Result.Failure<BookingDto>(BookingErrors.TimeslotNotOpen(timeslot.Id));
             }
 
-            if (startAt < subscription.PeriodStart || endAt > subscription.PeriodEnd)
+            var hasLockedPeriod = subscription.PeriodEnd > subscription.PeriodStart;
+            if (startAt < subscription.PeriodStart || (hasLockedPeriod && endAt > subscription.PeriodEnd))
             {
                 return Result.Failure<BookingDto>(BookingErrors.TimeslotOutsideSubscription(timeslot.Id, subscription.Id));
             }
@@ -104,11 +105,6 @@ public sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingC
                 StartAt = startAt,
                 EndAt = endAt,
                 Status = BookingStatus.Confirmed,
-                GrossAmountVnd = 0,
-                CommissionPct = subscription.CommissionPct,
-                CommissionVnd = 0,
-                NetAmountVnd = 0,
-                CurrencyCode = subscription.CurrencyCode,
                 LocationNote = request.LocationNote,
                 Notes = request.Notes,
                 DurationMinutes = durationMinutes,
@@ -120,6 +116,10 @@ public sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingC
             await _bookingRepository.AddAsync(bookingWithSubscription, cancellationToken);
 
             subscription.SessionsReserved += 1;
+            if (subscription.SessionsReserved >= subscription.SessionsTotal)
+            {
+                subscription.PeriodEnd = endAt;
+            }
             subscription.UpdatedAt = utcNow;
             _subscriptionRepository.Update(subscription);
 
@@ -161,14 +161,9 @@ public sealed class CreateBookingCommandHandler : ICommandHandler<CreateBookingC
             StartAt = startAt,
             EndAt = endAt,
             Status = request.Status,
-            GrossAmountVnd = request.GrossAmountVnd,
-            CommissionPct = request.CommissionPct,
-            CommissionVnd = request.CommissionVnd,
-            NetAmountVnd = request.NetAmountVnd,
-            CurrencyCode = request.CurrencyCode,
             LocationNote = request.LocationNote,
             Notes = request.Notes,
-            DurationMinutes = request.DurationMinutes ?? (timeslot is not null ? (int?)(endAt - startAt).TotalMinutes : null),
+            DurationMinutes = request.DurationMinutes ?? (int?)(endAt - startAt).TotalMinutes,
             CreatedAt = utcNow,
             UpdatedAt = utcNow,
             Timeslot = timeslot

@@ -58,6 +58,18 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
         timeslot.UpdatedAt = utcNow;
         _timeslotRepository.Update(timeslot);
 
+        var subscriptionPeriodStart = utcNow;
+        var subscriptionPeriodEnd = request.SubscriptionSessionsTotal == 1
+            ? timeslot.EndAt
+            : subscriptionPeriodStart;
+
+        var netAmountVnd = request.SubscriptionNetAmountVnd;
+        var commissionVndDecimal = Math.Round(
+            netAmountVnd * request.SubscriptionCommissionPct / 100m,
+            MidpointRounding.AwayFromZero);
+        var subscriptionCommissionVnd = Convert.ToInt64(commissionVndDecimal);
+        var subscriptionPriceGrossVnd = checked(netAmountVnd + subscriptionCommissionVnd);
+
         var subscription = new Subscription
         {
             Id = Guid.NewGuid(),
@@ -65,16 +77,16 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
             CoachId = timeslot.CoachId,
             ServiceId = request.ServiceId,
             Status = SubscriptionStatus.Pending,
-            PeriodStart = request.SubscriptionPeriodStart,
-            PeriodEnd = request.SubscriptionPeriodEnd,
+            PeriodStart = subscriptionPeriodStart,
+            PeriodEnd = subscriptionPeriodEnd,
             SessionsTotal = request.SubscriptionSessionsTotal,
             SessionsReserved = 0,
             SessionsConsumed = 0,
-            PriceGrossVnd = request.SubscriptionPriceGrossVnd,
+            PriceGrossVnd = subscriptionPriceGrossVnd,
             CommissionPct = request.SubscriptionCommissionPct,
-            CommissionVnd = request.SubscriptionCommissionVnd,
-            NetAmountVnd = request.SubscriptionNetAmountVnd,
-            CurrencyCode = request.SubscriptionCurrencyCode,
+            CommissionVnd = subscriptionCommissionVnd,
+            NetAmountVnd = netAmountVnd,
+            CurrencyCode = "VND",
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };
@@ -89,11 +101,7 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
             TimeslotId = timeslot.Id,
             StartAt = timeslot.StartAt,
             EndAt = timeslot.EndAt,
-            GrossAmountVnd = request.BookingGrossAmountVnd,
-            CommissionPct = request.BookingCommissionPct,
-            CommissionVnd = request.BookingCommissionVnd,
-            NetAmountVnd = request.BookingNetAmountVnd,
-            CurrencyCode = request.BookingCurrencyCode,
+            Status = BookingStatus.PendingPayment,
             LocationNote = request.BookingLocationNote,
             Notes = request.BookingNotes,
             DurationMinutes = request.BookingDurationMinutes
@@ -122,7 +130,7 @@ public sealed class CreatePendingSubscriptionBookingCommandHandler
             RequestedBookingId = booking.Id,
             WalletId = request.WalletId,
             TimeslotId = timeslot.Id,
-            AmountVnd = request.SubscriptionPriceGrossVnd,
+            AmountVnd = subscriptionPriceGrossVnd,
             Gateway = request.Gateway,
             Flow = request.Flow,
             StartedAtUtc = utcNow,

@@ -85,7 +85,7 @@ public class SubscriptionRepository : Repository<Subscription>, ISubscriptionRep
             s.CoachId == coachId &&
             s.Status == SubscriptionStatus.Active &&
             s.PeriodStart <= bookingStart &&
-            s.PeriodEnd >= bookingEnd &&
+            (s.PeriodEnd >= bookingEnd || s.PeriodEnd <= s.PeriodStart) &&
             s.SessionsReserved < s.SessionsTotal);
 
         if (asNoTracking)
