@@ -96,6 +96,10 @@ public sealed class ConfirmPendingSubscriptionBookingCommandHandler
 
         subscription.Status = SubscriptionStatus.Active;
         subscription.SessionsReserved += 1;
+        if (subscription.SessionsReserved >= subscription.SessionsTotal)
+        {
+            subscription.PeriodEnd = timeslot.EndAt;
+        }
         subscription.UpdatedAt = utcNow;
         _subscriptionRepository.Update(subscription);
 

@@ -1,8 +1,10 @@
 using System;
 using Amazon.S3;
+using Application.Abstractions.Interface;
 using Application.Sagas;
 using Domain.IRepositories;
 using Infrastructure.Common;
+using Infrastructure.Gmail;
 using Infrastructure.Repositories;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<ICoachServiceRepository, CoachServiceRepository>();
         services.AddScoped<IKycRecordRepository, KycRecordRepository>();
         services.AddScoped<ISportRepository, SportRepository>();
+        services.AddScoped<IEmailSender, GmailSmtpEmailSender>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<EnvironmentConfig>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

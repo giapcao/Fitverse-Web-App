@@ -12,11 +12,6 @@ public sealed record CreateBookingCommand(
     DateTime StartAt,
     DateTime EndAt,
     BookingStatus Status = BookingStatus.PendingPayment,
-    long GrossAmountVnd = 0,
-    decimal CommissionPct = 15.00m,
-    long CommissionVnd = 0,
-    long NetAmountVnd = 0,
-    string CurrencyCode = "VND",
     string? LocationNote = null,
     string? Notes = null,
     int? DurationMinutes = null) : ICommand<BookingDto>;

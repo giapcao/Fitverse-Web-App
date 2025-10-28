@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
+using Options = Infrastructure.Common.Options;
 
 DotNetEnv.Env.Load();
 
@@ -72,6 +73,22 @@ builder.Services.AddSwaggerGen(c =>
         c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
     }
 });
+
+builder.Services
+    .AddOptions<Options.SmtpOptions>()
+    .Bind(builder.Configuration.GetSection("Smtp"))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.Host), "Smtp:Host is required.")
+    .Validate(o => o.Port > 0, "Smtp:Port must be greater than 0.")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.User), "Smtp:User is required.")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.Pass), "Smtp:Pass is required.")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.FromName), "Smtp:FromName is required.")
+    .ValidateOnStart();
+
+builder.Services
+    .AddOptions<Options.CoachAppOptions>()
+    .Bind(builder.Configuration.GetSection("CoachApp"))
+    .Validate(o => !string.IsNullOrWhiteSpace(o.DashboardUrl), "CoachApp:DashboardUrl is required.")
+    .ValidateOnStart();
 
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
 builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));

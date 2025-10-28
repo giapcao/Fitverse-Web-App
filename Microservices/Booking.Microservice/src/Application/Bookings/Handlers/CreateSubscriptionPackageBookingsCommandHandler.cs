@@ -88,9 +88,11 @@ public sealed class CreateSubscriptionPackageBookingsCommandHandler
             return Result.Failure<IReadOnlyCollection<BookingDto>>(BookingErrors.SubscriptionUnavailable(request.UserId, request.CoachId));
         }
 
+        var hasLockedPeriod = subscription.PeriodEnd > subscription.PeriodStart;
+
         foreach (var timeslot in timeslots)
         {
-            if (timeslot.StartAt < subscription.PeriodStart || timeslot.EndAt > subscription.PeriodEnd)
+            if (timeslot.StartAt < subscription.PeriodStart || (hasLockedPeriod && timeslot.EndAt > subscription.PeriodEnd))
             {
                 return Result.Failure<IReadOnlyCollection<BookingDto>>(BookingErrors.TimeslotOutsideSubscription(timeslot.Id, subscription.Id));
             }
@@ -122,11 +124,6 @@ public sealed class CreateSubscriptionPackageBookingsCommandHandler
                 StartAt = timeslot.StartAt,
                 EndAt = timeslot.EndAt,
                 Status = BookingStatus.Paid,
-                GrossAmountVnd = 0,
-                CommissionPct = subscription.CommissionPct,
-                CommissionVnd = 0,
-                NetAmountVnd = 0,
-                CurrencyCode = subscription.CurrencyCode,
                 LocationNote = request.LocationNote,
                 Notes = request.Notes,
                 DurationMinutes = (int)(timeslot.EndAt - timeslot.StartAt).TotalMinutes,
@@ -156,6 +153,10 @@ public sealed class CreateSubscriptionPackageBookingsCommandHandler
         }
 
         subscription.SessionsReserved += timeslotCount;
+        if (subscription.SessionsReserved >= subscription.SessionsTotal)
+        {
+            subscription.PeriodEnd = latestEnd;
+        }
         subscription.UpdatedAt = utcNow;
         _subscriptionRepository.Update(subscription);
 

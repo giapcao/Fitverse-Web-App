@@ -11,11 +11,9 @@ public class UpdateBookingCommandValidator : AbstractValidator<UpdateBookingComm
         RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.CoachId).NotEmpty();
         RuleFor(x => x.StartAt).LessThan(x => x.EndAt);
-        RuleFor(x => x.GrossAmountVnd).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.CommissionPct).InclusiveBetween(0, 100);
-        RuleFor(x => x.CommissionVnd).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.NetAmountVnd).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.CurrencyCode).NotEmpty().MaximumLength(10);
         RuleFor(x => x.Status).IsInEnum();
+        RuleFor(x => x.DurationMinutes)
+            .GreaterThan(0)
+            .When(x => x.DurationMinutes.HasValue);
     }
 }
