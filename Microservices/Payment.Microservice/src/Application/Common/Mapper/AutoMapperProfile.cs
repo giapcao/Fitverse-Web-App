@@ -8,6 +8,8 @@ using Application.WalletLedgerEntries.Commands;
 using Application.WalletLedgerEntries.Queries;
 using Application.Wallets.Commands;
 using Application.Wallets.Queries;
+using Application.WithdrawalRequests.Commands;
+using Application.WithdrawalRequests.Queries;
 using Domain.Entities;
 using Mapster;
 
@@ -36,6 +38,10 @@ namespace Application.Common.Mapper
             config.NewConfig<CreateWalletLedgerEntryCommand, WalletLedgerEntry>();
             config.NewConfig<UpdateWalletLedgerEntryCommand, WalletLedgerEntry>();
             config.NewConfig<WalletLedgerEntry, WalletLedgerEntryResponse>();
+
+            config.NewConfig<CreateWithdrawalRequestCommand, WithdrawalRequest>();
+            config.NewConfig<UpdateWithdrawalRequestStatusCommand, WithdrawalRequest>();
+            config.NewConfig<WithdrawalRequest, WithdrawalRequestResponse>();
         }
     }
 }

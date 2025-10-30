@@ -103,6 +103,7 @@ builder.Services.AddSingleton(sp =>
     dataSourceBuilder.MapEnum<WalletJournalStatus>("wallet_journal_status_enum");
     dataSourceBuilder.MapEnum<WalletJournalType>("wallet_journal_type_enum");
     dataSourceBuilder.MapEnum<WalletStatus>("wallet_status_enum");
+    dataSourceBuilder.MapEnum<WithdrawalRequestStatus>("withdrawal_request_status_enum");
 
     return dataSourceBuilder.Build();
 });

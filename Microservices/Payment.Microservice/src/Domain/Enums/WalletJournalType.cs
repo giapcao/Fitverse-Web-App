@@ -10,6 +10,9 @@ public enum WalletJournalType
     [PgName("HOLD")]
     Hold,
 
+    [PgName("WITHDRAWAL_HOLD")]
+    WithdrawalHold,
+
     [PgName("RELEASE")]
     Release,
 

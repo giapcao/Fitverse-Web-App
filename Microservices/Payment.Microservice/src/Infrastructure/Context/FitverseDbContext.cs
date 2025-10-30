@@ -26,6 +26,8 @@ public partial class FitverseDbContext : DbContext
 
     public virtual DbSet<WalletLedgerEntry> WalletLedgerEntries { get; set; }
 
+    public virtual DbSet<WithdrawalRequest> WithdrawalRequests { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         
@@ -40,6 +42,7 @@ public partial class FitverseDbContext : DbContext
             .HasPostgresEnum<WalletJournalStatus>("public", "wallet_journal_status_enum")
             .HasPostgresEnum<WalletJournalType>("public", "wallet_journal_type_enum")
             .HasPostgresEnum<WalletStatus>("public", "wallet_status_enum")
+            .HasPostgresEnum<WithdrawalRequestStatus>("public", "withdrawal_request_status_enum")
             .HasPostgresExtension("pgcrypto")
             .HasPostgresExtension("citext");
 
@@ -190,6 +193,53 @@ public partial class FitverseDbContext : DbContext
             entity.HasOne(d => d.Wallet).WithMany(p => p.WalletLedgerEntries)
                 .HasForeignKey(d => d.WalletId)
                 .HasConstraintName("wallet_ledger_entry_wallet_id_fkey");
+        });
+
+        modelBuilder.Entity<WithdrawalRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("withdrawal_request_pkey");
+
+            entity.ToTable("withdrawal_request");
+
+            entity.HasIndex(e => e.WalletId, "idx_withdrawal_request_wallet");
+
+            entity.HasIndex(e => e.UserId, "idx_withdrawal_request_user");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.WalletId).HasColumnName("wallet_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AmountVnd).HasColumnName("amount_vnd");
+            entity.Property(e => e.Status)
+                .HasColumnType("withdrawal_request_status_enum")
+                .HasColumnName("status");
+            entity.Property(e => e.HoldWalletJournalId).HasColumnName("hold_wallet_journal_id");
+            entity.Property(e => e.PayoutWalletJournalId).HasColumnName("payout_wallet_journal_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.ApprovedAt).HasColumnName("approved_at");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.RejectedAt).HasColumnName("rejected_at");
+            entity.Property(e => e.RejectionReason).HasColumnName("rejection_reason");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.WithdrawalRequests)
+                .HasForeignKey(d => d.WalletId)
+                .HasConstraintName("withdrawal_request_wallet_id_fkey");
+
+            entity.HasOne(d => d.HoldWalletJournal)
+                .WithMany()
+                .HasForeignKey(d => d.HoldWalletJournalId)
+                .HasConstraintName("withdrawal_request_hold_wallet_journal_id_fkey");
+
+            entity.HasOne(d => d.PayoutWalletJournal)
+                .WithMany()
+                .HasForeignKey(d => d.PayoutWalletJournalId)
+                .HasConstraintName("withdrawal_request_payout_wallet_journal_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);
