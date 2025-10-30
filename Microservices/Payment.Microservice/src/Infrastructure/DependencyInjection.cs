@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IWalletBalanceRepository, WalletBalanceRepository>();
         services.AddScoped<IWalletJournalRepository, WalletJournalRepository>();
         services.AddScoped<IWalletLedgerEntryRepository, WalletLedgerEntryRepository>();
+        services.AddScoped<IWithdrawalRequestRepository, WithdrawalRequestRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
@@ -47,6 +48,7 @@ public static class DependencyInjection
                 npgsqlOptions.MapEnum<WalletJournalStatus>("wallet_journal_status_enum");
                 npgsqlOptions.MapEnum<WalletJournalType>("wallet_journal_type_enum");
                 npgsqlOptions.MapEnum<WalletStatus>("wallet_status_enum");
+                npgsqlOptions.MapEnum<WithdrawalRequestStatus>("withdrawal_request_status_enum");
 
                 if (dbConfig.MaxRetryCount > 0)
                 {

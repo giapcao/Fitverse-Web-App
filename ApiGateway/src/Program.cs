@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Yarp.ReverseProxy;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,7 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 var jwt = builder.Configuration.GetSection("Jwt");
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
@@ -40,18 +42,51 @@ builder.Services.AddReverseProxy()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+var vercelProd = "https://fitverse-five.vercel.app";
+var customDomains = new[] { "https://www.yourdomain.com", "https://yourdomain.com" };
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return true;
+                if (origin.Equals("http://localhost:5173", StringComparison.OrdinalIgnoreCase)) return true;
+                if (origin.Equals(vercelProd, StringComparison.OrdinalIgnoreCase)) return true;
+
+                try
+                {
+                    var uri = new Uri(origin);
+                    var host = uri.Host;
+
+                    if (customDomains.Any(d => new Uri(d).Host.Equals(host, StringComparison.OrdinalIgnoreCase)))
+                        return true;
+
+                    if (host.Equals("https://fitverse-five.vercel.app", StringComparison.OrdinalIgnoreCase))
+                        return true;
+
+                    if (host.EndsWith("-your-app.vercel.app", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+                catch {}
+
+                return false;
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
+
 var app = builder.Build();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -59,12 +94,12 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/api/coach/swagger/v1/swagger.json", "Coach Service v1");
     c.SwaggerEndpoint("/api/payment/swagger/v1/swagger.json", "Payment Service v1");
     c.SwaggerEndpoint("/api/booking/swagger/v1/swagger.json", "Booking Service v1");
-    c.RoutePrefix = "docs";  
+    c.RoutePrefix = "docs";
 });
 
 app.MapGet("/health", () => "ok");
-app.UseCors("AllowFrontend");
 
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

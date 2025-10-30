@@ -19,4 +19,6 @@ public partial class Wallet
     public virtual ICollection<WalletBalance> WalletBalances { get; set; } = new List<WalletBalance>();
 
     public virtual ICollection<WalletLedgerEntry> WalletLedgerEntries { get; set; } = new List<WalletLedgerEntry>();
+
+    public virtual ICollection<WithdrawalRequest> WithdrawalRequests { get; set; } = new List<WithdrawalRequest>();
 }

@@ -437,6 +437,7 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
         return journalType switch
         {
             WalletJournalType.Hold => WalletAccountType.Escrow,
+            WalletJournalType.WithdrawalHold => WalletAccountType.Frozen,
             _ => WalletAccountType.Available
         };
     }
@@ -452,6 +453,7 @@ internal abstract class PaymentGatewayReturnHandlerBase<TConfig> : IPaymentGatew
                 WalletJournalType.DisputeRelease => Dc.Debit,
 
             WalletJournalType.Hold => Dc.Debit,
+            WalletJournalType.WithdrawalHold => Dc.Debit,
 
             WalletJournalType.Payout or
                 WalletJournalType.Fee or
