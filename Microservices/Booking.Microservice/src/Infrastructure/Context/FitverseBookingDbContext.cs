@@ -89,32 +89,20 @@ public partial class FitverseBookingDbContext : DbContext
 
             entity.HasIndex(e => new { e.UserId, e.StartAt }, "idx_booking_user");
 
-            entity.HasIndex(e => e.Status, "idx_booking_status");
-
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("gen_random_uuid()")
                 .HasColumnName("id");
             entity.Property(e => e.CoachId).HasColumnName("coach_id");
-            entity.Property(e => e.CommissionPct)
-                .HasPrecision(5, 2)
-                .HasDefaultValueSql("15.00")
-                .HasColumnName("commission_pct");
-            entity.Property(e => e.CommissionVnd).HasColumnName("commission_vnd");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("now()")
                 .HasColumnName("created_at");
-            entity.Property(e => e.CurrencyCode)
-                .HasDefaultValueSql("'VND'::text")
-                .HasColumnName("currency_code");
             entity.Property(e => e.DurationMinutes).HasColumnName("duration_minutes");
             entity.Property(e => e.EndAt).HasColumnName("end_at");
             entity.Property(e => e.Status)
                 .HasColumnType("booking_status_enum")
                 .HasDefaultValueSql("'pending_payment'::booking_status_enum")
                 .HasColumnName("status");
-            entity.Property(e => e.GrossAmountVnd).HasColumnName("gross_amount_vnd");
             entity.Property(e => e.LocationNote).HasColumnName("location_note");
-            entity.Property(e => e.NetAmountVnd).HasColumnName("net_amount_vnd");
             entity.Property(e => e.Notes).HasColumnName("notes");
             entity.Property(e => e.StartAt).HasColumnName("start_at");
             entity.Property(e => e.TimeslotId).HasColumnName("timeslot_id");

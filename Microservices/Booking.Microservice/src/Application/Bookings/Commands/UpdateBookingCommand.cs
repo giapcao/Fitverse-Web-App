@@ -13,11 +13,6 @@ public sealed record UpdateBookingCommand(
     DateTime StartAt,
     DateTime EndAt,
     BookingStatus Status,
-    long GrossAmountVnd,
-    decimal CommissionPct,
-    long CommissionVnd,
-    long NetAmountVnd,
-    string CurrencyCode,
     string? LocationNote,
     string? Notes,
     int? DurationMinutes) : ICommand<BookingDto>;

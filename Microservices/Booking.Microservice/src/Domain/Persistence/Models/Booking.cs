@@ -33,22 +33,6 @@ public class Booking
     [Column("status")]
     public BookingStatus Status { get; set; } = BookingStatus.PendingPayment;
 
-    [Column("gross_amount_vnd")]
-    public long GrossAmountVnd { get; set; }
-
-    [Column("commission_pct")]
-    [Precision(5, 2)]
-    public decimal CommissionPct { get; set; } = 15.00m;
-
-    [Column("commission_vnd")]
-    public long CommissionVnd { get; set; }
-
-    [Column("net_amount_vnd")]
-    public long NetAmountVnd { get; set; }
-
-    [Column("currency_code")]
-    public string CurrencyCode { get; set; } = "VND";
-
     [Column("location_note")]
     public string? LocationNote { get; set; }
 

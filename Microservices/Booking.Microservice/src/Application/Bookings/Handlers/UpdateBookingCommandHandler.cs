@@ -38,11 +38,6 @@ public sealed class UpdateBookingCommandHandler : ICommandHandler<UpdateBookingC
         booking.StartAt = request.StartAt;
         booking.EndAt = request.EndAt;
         booking.Status = request.Status;
-        booking.GrossAmountVnd = request.GrossAmountVnd;
-        booking.CommissionPct = request.CommissionPct;
-        booking.CommissionVnd = request.CommissionVnd;
-        booking.NetAmountVnd = request.NetAmountVnd;
-        booking.CurrencyCode = request.CurrencyCode;
         booking.LocationNote = request.LocationNote;
         booking.Notes = request.Notes;
         booking.DurationMinutes = request.DurationMinutes;
