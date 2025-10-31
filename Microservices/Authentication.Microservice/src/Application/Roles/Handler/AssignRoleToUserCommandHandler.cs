@@ -11,6 +11,7 @@ using Domain.Enums;
 using Domain.IRepositories;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.Roles.Handler;
 
@@ -18,13 +19,16 @@ public sealed class AssignRoleToUserCommandHandler : ICommandHandler<AssignRoleT
 {
     private readonly IAuthenticationRepository _userRepository;
     private readonly IRepository<Role> _roleRepository;
+    private readonly IFileStorageService _fileStorageService;
 
     public AssignRoleToUserCommandHandler(
         IAuthenticationRepository userRepository,
-        IRepository<Role> roleRepository)
+        IRepository<Role> roleRepository,
+        IFileStorageService fileStorageService)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<UserDto>> Handle(AssignRoleToUserCommand request, CancellationToken ct)
@@ -61,7 +65,9 @@ public sealed class AssignRoleToUserCommandHandler : ICommandHandler<AssignRoleT
             _userRepository.Update(user);
         }
 
-        return Result.Success(UserMapping.ToDto(user));
+        var dto = UserMapping.ToDto(user);
+        dto = await UserAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, ct).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }
 

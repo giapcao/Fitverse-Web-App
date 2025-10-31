@@ -7,16 +7,19 @@ using Application.Users.Command;
 using Domain.IRepositories;
 using SharedLibrary.Common;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.Users.Handler;
 
 public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand, UserDto>
 {
     private readonly IAuthenticationRepository _userRepository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public UpdateUserCommandHandler(IAuthenticationRepository userRepository)
+    public UpdateUserCommandHandler(IAuthenticationRepository userRepository, IFileStorageService fileStorageService)
     {
         _userRepository = userRepository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<UserDto>> Handle(UpdateUserCommand request, CancellationToken ct)
@@ -52,11 +55,6 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
             user.Phone = request.Phone.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
-        {
-            user.AvatarUrl = request.AvatarUrl.Trim();
-        }
-
         if (!string.IsNullOrWhiteSpace(request.Gender))
         {
             user.Gender = request.Gender.Trim();
@@ -85,6 +83,8 @@ public sealed class UpdateUserCommandHandler : ICommandHandler<UpdateUserCommand
         user.UpdatedAt = DateTime.UtcNow;
         _userRepository.Update(user);
 
-        return Result.Success(UserMapping.ToDto(user));
+        var dto = UserMapping.ToDto(user);
+        dto = await UserAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, ct).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }

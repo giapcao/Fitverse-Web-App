@@ -32,13 +32,6 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
                 .MaximumLength(32);
         });
 
-        When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl), () =>
-        {
-            RuleFor(x => x.AvatarUrl!)
-                .Must(IsValidAbsoluteUri)
-                .WithMessage("AvatarUrl must be a valid absolute URI.");
-        });
-
         When(x => !string.IsNullOrWhiteSpace(x.Gender), () =>
         {
             RuleFor(x => x.Gender!)
@@ -76,13 +69,9 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
         !string.IsNullOrWhiteSpace(command.Email)
         || !string.IsNullOrWhiteSpace(command.FullName)
         || !string.IsNullOrWhiteSpace(command.Phone)
-        || !string.IsNullOrWhiteSpace(command.AvatarUrl)
         || !string.IsNullOrWhiteSpace(command.Gender)
         || command.Birth.HasValue
         || command.Description is not null
         || command.HomeLat.HasValue
         || command.HomeLng.HasValue;
-
-    private static bool IsValidAbsoluteUri(string value) =>
-        Uri.TryCreate(value, UriKind.Absolute, out _);
 }

@@ -17,6 +17,9 @@ using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
+using Amazon.S3;
+using Microsoft.Extensions.Options;
+using SharedLibrary.Storage;
 
 namespace Infrastructure
 {
@@ -39,6 +42,12 @@ namespace Infrastructure
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddSingleton<EnvironmentConfig>();
+            services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var options = sp.GetRequiredService<IOptions<AwsS3Config>>();
+                return S3FileStorageService.CreateS3Client(options.Value);
+            });
+            services.AddSingleton<IFileStorageService, S3FileStorageService>();
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             using var serviceProvider = services.BuildServiceProvider();
             var logger = serviceProvider.GetRequiredService<ILogger<AutoScaffold>>();
