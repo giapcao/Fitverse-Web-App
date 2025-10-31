@@ -49,38 +49,11 @@ var customDomains = new[] { "https://www.yourdomain.com", "https://yourdomain.co
 
 builder.Services.AddCors(options =>
 {
-<<<<<<< Updated upstream
-    options.AddPolicy("AllowFrontend", policy =>
-=======
     options.AddPolicy(AllowFrontendPolicy, policy =>
->>>>>>> Stashed changes
     {
         policy
             .SetIsOriginAllowed(origin =>
             {
-<<<<<<< Updated upstream
-                if (string.IsNullOrEmpty(origin)) return true;
-                if (origin.Equals("http://localhost:5173", StringComparison.OrdinalIgnoreCase)) return true;
-                if (origin.Equals(vercelProd, StringComparison.OrdinalIgnoreCase)) return true;
-
-                try
-                {
-                    var uri = new Uri(origin);
-                    var host = uri.Host;
-
-                    if (customDomains.Any(d => new Uri(d).Host.Equals(host, StringComparison.OrdinalIgnoreCase)))
-                        return true;
-
-                    if (host.Equals("https://fitverse-five.vercel.app", StringComparison.OrdinalIgnoreCase))
-                        return true;
-
-                    if (host.EndsWith("-your-app.vercel.app", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-                catch {}
-
-                return false;
-=======
                 if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
                 {
                     return false;
@@ -91,7 +64,6 @@ builder.Services.AddCors(options =>
                        || host.Equals("127.0.0.1", System.StringComparison.OrdinalIgnoreCase)
                        || host.EndsWith("vercel.app", System.StringComparison.OrdinalIgnoreCase)
                        || host.EndsWith("ngrok-free.app", System.StringComparison.OrdinalIgnoreCase);
->>>>>>> Stashed changes
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -101,14 +73,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-<<<<<<< Updated upstream
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-
-=======
->>>>>>> Stashed changes
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -120,11 +84,8 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapGet("/health", () => "ok");
-<<<<<<< Updated upstream
-=======
 
 app.UseCors(AllowFrontendPolicy);
->>>>>>> Stashed changes
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
