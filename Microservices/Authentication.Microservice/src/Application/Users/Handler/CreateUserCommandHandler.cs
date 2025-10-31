@@ -10,6 +10,7 @@ using Domain.IRepositories;
 using SharedLibrary.Common;
 using Microsoft.AspNetCore.Identity;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.Users.Handler;
 
@@ -18,15 +19,18 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
     private readonly IAuthenticationRepository _userRepository;
     private readonly IRepository<Role> _roleRepository;
     private readonly IPasswordHasher<AppUser> _passwordHasher;
+    private readonly IFileStorageService _fileStorageService;
 
     public CreateUserCommandHandler(
         IAuthenticationRepository userRepository,
         IRepository<Role> roleRepository,
-        IPasswordHasher<AppUser> passwordHasher)
+        IPasswordHasher<AppUser> passwordHasher,
+        IFileStorageService fileStorageService)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _passwordHasher = passwordHasher;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<UserDto>> Handle(CreateUserCommand request, CancellationToken ct)
@@ -45,7 +49,6 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
             Email = normalizedEmail,
             Phone = request.Phone,
             FullName = request.FullName,
-            AvatarUrl = request.AvatarUrl,
             Gender = request.Gender,
             Birth = request.Birth,
             Description = request.Description,
@@ -75,6 +78,8 @@ public sealed class CreateUserCommandHandler : ICommandHandler<CreateUserCommand
 
         await _userRepository.AddAsync(user, ct);
 
-        return Result.Success(UserMapping.ToDto(user));
+        var dto = UserMapping.ToDto(user);
+        dto = await UserAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, ct).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }

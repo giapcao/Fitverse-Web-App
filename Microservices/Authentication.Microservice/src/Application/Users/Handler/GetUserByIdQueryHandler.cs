@@ -5,16 +5,19 @@ using Application.Features;
 using Application.Users.Command;
 using Domain.IRepositories;
 using SharedLibrary.Common.ResponseModel;
+using SharedLibrary.Storage;
 
 namespace Application.Users.Handler;
 
 public sealed class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, UserDto>
 {
     private readonly IAuthenticationRepository _userRepository;
+    private readonly IFileStorageService _fileStorageService;
 
-    public GetUserByIdQueryHandler(IAuthenticationRepository userRepository)
+    public GetUserByIdQueryHandler(IAuthenticationRepository userRepository, IFileStorageService fileStorageService)
     {
         _userRepository = userRepository;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<UserDto>> Handle(GetUserByIdQuery request, CancellationToken ct)
@@ -25,6 +28,8 @@ public sealed class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, Us
             return Result.Failure<UserDto>(new Error("User.NotFound", $"User with id {request.Id} was not found."));
         }
 
-        return Result.Success(UserMapping.ToDto(user));
+        var dto = UserMapping.ToDto(user);
+        dto = await UserAvatarHelper.WithSignedAvatarAsync(dto, _fileStorageService, ct).ConfigureAwait(false);
+        return Result.Success(dto);
     }
 }

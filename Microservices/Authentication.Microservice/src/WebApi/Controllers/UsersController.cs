@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Application.Features;
@@ -10,6 +11,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SharedLibrary.Common;
+using WebApi.Contracts.Requests;
 
 namespace WebApi.Controllers;
 
@@ -74,6 +76,46 @@ public class UsersController : ApiController
     {
         var merged = command with { Id = id };
         var result = await _mediator.Send(merged, ct);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("{id:guid}/avatar")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UpdateAvatar(Guid id, [FromForm] UpdateUserAvatarRequest request, CancellationToken ct)
+    {
+        if (request.UserId != Guid.Empty && request.UserId != id)
+        {
+            return BadRequest("UserId in request does not match the route parameter.");
+        }
+
+        var directory = string.IsNullOrWhiteSpace(request.Directory) ? "user-avatar" : request.Directory;
+        UserAvatarFile? file = null;
+        if (request.File is not null && request.File.Length > 0)
+        {
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream, ct);
+            file = new UserAvatarFile(
+                memoryStream.ToArray(),
+                request.File.FileName,
+                request.File.ContentType,
+                directory);
+        }
+
+        var result = await _mediator.Send(
+            new UpdateUserAvatarCommand(
+                id,
+                directory,
+                file),
+            ct);
+
         if (result.IsFailure)
         {
             return HandleFailure(result);

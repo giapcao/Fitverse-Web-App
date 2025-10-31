@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -5,6 +6,7 @@ using Yarp.ReverseProxy;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+const string AllowFrontendPolicy = "AllowFrontend";
 
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
@@ -47,11 +49,16 @@ var customDomains = new[] { "https://www.yourdomain.com", "https://yourdomain.co
 
 builder.Services.AddCors(options =>
 {
+<<<<<<< Updated upstream
     options.AddPolicy("AllowFrontend", policy =>
+=======
+    options.AddPolicy(AllowFrontendPolicy, policy =>
+>>>>>>> Stashed changes
     {
         policy
             .SetIsOriginAllowed(origin =>
             {
+<<<<<<< Updated upstream
                 if (string.IsNullOrEmpty(origin)) return true;
                 if (origin.Equals("http://localhost:5173", StringComparison.OrdinalIgnoreCase)) return true;
                 if (origin.Equals(vercelProd, StringComparison.OrdinalIgnoreCase)) return true;
@@ -73,6 +80,18 @@ builder.Services.AddCors(options =>
                 catch {}
 
                 return false;
+=======
+                if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                {
+                    return false;
+                }
+
+                var host = uri.Host;
+                return host.Equals("localhost", System.StringComparison.OrdinalIgnoreCase)
+                       || host.Equals("127.0.0.1", System.StringComparison.OrdinalIgnoreCase)
+                       || host.EndsWith("vercel.app", System.StringComparison.OrdinalIgnoreCase)
+                       || host.EndsWith("ngrok-free.app", System.StringComparison.OrdinalIgnoreCase);
+>>>>>>> Stashed changes
             })
             .AllowAnyHeader()
             .AllowAnyMethod()
@@ -82,11 +101,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+<<<<<<< Updated upstream
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
+=======
+>>>>>>> Stashed changes
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -98,11 +120,17 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapGet("/health", () => "ok");
+<<<<<<< Updated upstream
+=======
+
+app.UseCors(AllowFrontendPolicy);
+>>>>>>> Stashed changes
 
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapReverseProxy().RequireCors("AllowFrontend");
+app.MapReverseProxy().RequireCors(AllowFrontendPolicy);
 
 app.Run("http://0.0.0.0:8080");
+

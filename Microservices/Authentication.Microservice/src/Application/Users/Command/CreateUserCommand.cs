@@ -10,7 +10,6 @@ public sealed record CreateUserCommand(
     string Password,
     string FullName,
     string? Phone,
-    string? AvatarUrl,
     string? Gender,
     DateOnly? Birth,
     string? Description,

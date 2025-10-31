@@ -9,7 +9,6 @@ public sealed record UpdateUserCommand(
     string? Email,
     string? FullName,
     string? Phone,
-    string? AvatarUrl,
     string? Gender,
     DateOnly? Birth,
     string? Description,
