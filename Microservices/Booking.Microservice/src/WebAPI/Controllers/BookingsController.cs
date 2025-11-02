@@ -50,6 +50,32 @@ public class BookingsController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpGet("user/{userId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<BookingDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetBookingsByUserId(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ListBookingsByUserQuery(userId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("coach/{coachId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<BookingDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetBookingsByCoachId(Guid coachId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ListBookingsByCoachQuery(coachId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(BookingDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
