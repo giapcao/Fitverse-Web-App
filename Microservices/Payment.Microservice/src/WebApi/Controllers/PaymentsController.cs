@@ -53,6 +53,19 @@ public class PaymentsController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpGet("user/{userId:guid}")]
+    [ProducesResponseType(typeof(PaymentResponse[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPaymentsByUserId(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetPaymentsByUserIdQuery(userId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(PaymentResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

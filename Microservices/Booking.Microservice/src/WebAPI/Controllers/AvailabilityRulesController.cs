@@ -39,6 +39,19 @@ public class AvailabilityRulesController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpGet("coach/{coachId:guid}")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<AvailabilityRuleDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAvailabilityRulesByCoach(Guid coachId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ListAvailabilityRulesByCoachQuery(coachId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(AvailabilityRuleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
