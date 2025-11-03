@@ -6,7 +6,7 @@ on:
       environment:
         description: "GitHub Environment to use."
         type: string
-        default: infrastructure-khanghv2406
+        default: infrastructure-giapcd0711
         required: true
       confirm:
         description: "Type NUKE to confirm irreversible deletion (except ECR)"
@@ -125,3 +125,4 @@ jobs:
 
       - name: Finished
         run: echo "Nuke completed"
+        
