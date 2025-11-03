@@ -108,7 +108,7 @@ jobs:
       - name: Detect Dockerfile path
         id: dockerfile
         run: |
-          BASE="Backend/Microservices/${{ matrix.service }}"
+          BASE="Microservices/${{ matrix.service }}"
           for name in Dockerfile dockerfile DockerFile; do
             if [ -f "$BASE/$name" ]; then
               echo "path=$BASE/$name" >> "$GITHUB_OUTPUT"
@@ -127,7 +127,7 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ steps.set-tag.outputs.IMAGE_TAG }}
         with:
-          context: Backend/Microservices
+          context: Microservices
           file: ${{ steps.dockerfile.outputs.path }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}

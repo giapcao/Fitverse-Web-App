@@ -6,7 +6,7 @@ on:
       environment:
         description: "GitHub Environment to use"
         type: string
-        default: infrastructure-khanghv2406
+        default: infrastructure-giapcd0711
         required: true
       terraform_action:
         description: "Terraform action to perform"
@@ -30,7 +30,7 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
     env:
-      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
       PROJECT_NAME: ${{ vars.PROJECT_NAME || 'vkev-infrastructure-khanghv2406' }}
     steps:
       - name: Checkout

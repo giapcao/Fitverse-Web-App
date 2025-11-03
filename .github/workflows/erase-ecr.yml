@@ -6,7 +6,7 @@ on:
       environment:
         description: "GitHub Environment to use (secrets/vars)."
         type: string
-        default: infrastructure-khanghv2406
+        default: infrastructure-giapcd0711
         required: true
       dry_run:
         description: "Preview only (do NOT delete)."
@@ -21,7 +21,7 @@ on:
 
 env:
   # Falls back if environment vars are missing
-  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
 
 permissions:
   contents: read

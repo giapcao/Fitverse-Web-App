@@ -6,7 +6,7 @@ on:
       environment:
         description: "GitHub Environment to use."
         type: string
-        default: infrastructure-khanghv2406
+        default: infrastructure-giapcd0711
         required: true
 
 env:
@@ -32,7 +32,7 @@ jobs:
         id: get-services
         run: |
           services=()
-          BASE="Backend/Microservices"
+          BASE="Microservices"
           if [ -d "$BASE" ]; then
             for dir in "$BASE"/*/; do
               [ -d "$dir" ] || continue
@@ -125,7 +125,7 @@ jobs:
       - name: Detect Dockerfile path
         id: dockerfile
         run: |
-          BASE="Backend/Microservices/${{ matrix.service }}"
+          BASE="Microservices/${{ matrix.service }}"
           for name in Dockerfile dockerfile DockerFile; do
             if [ -f "$BASE/$name" ]; then
               echo "path=$BASE/$name" >> "$GITHUB_OUTPUT"
@@ -139,7 +139,7 @@ jobs:
       - name: Build and push image to Docker Hub
         uses: docker/build-push-action@v5
         with:
-          context: Backend/Microservices
+          context: Microservices
           file: ${{ steps.dockerfile.outputs.path }}
           build-args: |
             SERVICE_NAME=${{ matrix.service }}
@@ -184,6 +184,3 @@ jobs:
           else
             echo "One or more builds failed. Check the job logs above for details." >> $GITHUB_STEP_SUMMARY
           fi
-
-
-
