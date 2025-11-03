@@ -221,7 +221,7 @@ resource "aws_service_discovery_private_dns_namespace" "ecs_namespace" {
   tags        = { Name = "${var.project_name}-dns-namespace" }
 }
 
-# ECS Module - Server-1 (User microservice + RabbitMQ + Redis)
+# ECS Module - Server-1 (User + Coach microservices with RabbitMQ + Redis)
 module "ecs_server1" {
   source = "./modules/ecs"
 
@@ -261,6 +261,16 @@ module "ecs_server1" {
         ]
       },
       {
+        port_name      = var.services["coach"].ecs_service_connect_port_name
+        discovery_name = var.services["coach"].ecs_service_connect_discovery_name
+        client_aliases = [
+          {
+            dns_name = var.services["coach"].ecs_service_connect_dns_name
+            port     = var.services["coach"].ecs_container_port_mappings[0].container_port
+          }
+        ]
+      },
+      {
         port_name      = var.services["rabbitmq"].ecs_service_connect_port_name
         discovery_name = var.services["rabbitmq"].ecs_service_connect_discovery_name
         client_aliases = [
@@ -280,14 +290,14 @@ module "ecs_server1" {
           }
         ]
       }
-      # Note: API Gateway and Guest services auto-discovered via Service Connect namespace
+      # Note: API Gateway, Payment, Booking, and n8n services auto-discovered via Service Connect namespace
     ]
   }
 
   service_definitions = {
     server-1 = {
-      task_cpu         = 640
-      task_memory      = 640
+      task_cpu         = var.services["user"].ecs_container_cpu + var.services["coach"].ecs_container_cpu + var.services["rabbitmq"].ecs_container_cpu + var.services["redis"].ecs_container_cpu
+      task_memory      = var.services["user"].ecs_container_memory + var.services["coach"].ecs_container_memory + var.services["rabbitmq"].ecs_container_memory + var.services["redis"].ecs_container_memory
       desired_count    = 1
       assign_public_ip = false
       placement_constraints = [
@@ -381,6 +391,28 @@ module "ecs_server1" {
             startPeriod = var.services["user"].ecs_container_health_check.startPeriod
           }
           depends_on = ["rabbitmq", "redis"]
+        },
+        {
+          # Coach microservice - depends on RabbitMQ and Redis
+          name                 = "coach-microservice"
+          image_repository_url = var.services["coach"].ecs_container_image_repository_url
+          image_tag            = var.services["coach"].ecs_container_image_tag
+          cpu                  = var.services["coach"].ecs_container_cpu
+          memory               = var.services["coach"].ecs_container_memory
+          essential            = var.services["coach"].ecs_container_essential
+          port_mappings        = var.services["coach"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["coach"].ecs_environment_variables :
+            env_var
+          ]
+          health_check = {
+            command     = var.services["coach"].ecs_container_health_check.command
+            interval    = var.services["coach"].ecs_container_health_check.interval
+            timeout     = var.services["coach"].ecs_container_health_check.timeout
+            retries     = var.services["coach"].ecs_container_health_check.retries
+            startPeriod = var.services["coach"].ecs_container_health_check.startPeriod
+          }
+          depends_on = ["rabbitmq", "redis"]
         }
       ]
 
@@ -391,7 +423,7 @@ module "ecs_server1" {
   depends_on = [module.ec2]
 }
 
-# ECS Module - Server-2 (API Gateway + Guest microservice)
+# ECS Module - Server-2 (API Gateway + Payment + Booking + n8n)
 # Deploys after server-1 to ensure service discovery endpoints are available
 module "ecs_server2" {
   source = "./modules/ecs"
@@ -423,13 +455,24 @@ module "ecs_server2" {
   service_connect_services = {
     server-2 = [
       {
-        # Publish guest-service to namespace
-        port_name      = var.services["guest"].ecs_service_connect_port_name
-        discovery_name = var.services["guest"].ecs_service_connect_discovery_name
+        # Publish payment-service to namespace
+        port_name      = var.services["payment"].ecs_service_connect_port_name
+        discovery_name = var.services["payment"].ecs_service_connect_discovery_name
         client_aliases = [
           {
-            dns_name = var.services["guest"].ecs_service_connect_dns_name
-            port     = var.services["guest"].ecs_container_port_mappings[0].container_port
+            dns_name = var.services["payment"].ecs_service_connect_dns_name
+            port     = var.services["payment"].ecs_container_port_mappings[0].container_port
+          }
+        ]
+      },
+      {
+        # Publish booking-service to namespace
+        port_name      = var.services["booking"].ecs_service_connect_port_name
+        discovery_name = var.services["booking"].ecs_service_connect_discovery_name
+        client_aliases = [
+          {
+            dns_name = var.services["booking"].ecs_service_connect_dns_name
+            port     = var.services["booking"].ecs_container_port_mappings[0].container_port
           }
         ]
       },
@@ -455,14 +498,14 @@ module "ecs_server2" {
           }
         ]
       }
-      # Note: User, RabbitMQ, Redis auto-discovered via Service Connect namespace
+      # Note: User, Coach, RabbitMQ, and Redis auto-discovered via Service Connect namespace
     ]
   }
 
   service_definitions = {
     server-2 = {
-      task_cpu            = var.services["guest"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + var.services["n8n"].ecs_container_cpu + 64
-      task_memory         = var.services["guest"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + var.services["n8n"].ecs_container_memory + 128
+      task_cpu            = var.services["payment"].ecs_container_cpu + var.services["booking"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + var.services["n8n"].ecs_container_cpu + 64
+      task_memory         = var.services["payment"].ecs_container_memory + var.services["booking"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + var.services["n8n"].ecs_container_memory + 128
       desired_count       = 1
       assign_public_ip    = false
       enable_auto_scaling = false
@@ -482,24 +525,46 @@ module "ecs_server2" {
 
       containers = [
         {
-          # Guest microservice - deployed first as dependency for API Gateway
-          name                 = "guest-microservice"
-          image_repository_url = var.services["guest"].ecs_container_image_repository_url
-          image_tag            = var.services["guest"].ecs_container_image_tag
-          cpu                  = var.services["guest"].ecs_container_cpu
-          memory               = var.services["guest"].ecs_container_memory
-          essential            = var.services["guest"].ecs_container_essential
-          port_mappings        = var.services["guest"].ecs_container_port_mappings
+          # Payment microservice - ensures transaction flow prior to dependent services
+          name                 = "payment-microservice"
+          image_repository_url = var.services["payment"].ecs_container_image_repository_url
+          image_tag            = var.services["payment"].ecs_container_image_tag
+          cpu                  = var.services["payment"].ecs_container_cpu
+          memory               = var.services["payment"].ecs_container_memory
+          essential            = var.services["payment"].ecs_container_essential
+          port_mappings        = var.services["payment"].ecs_container_port_mappings
           environment_variables = [
-            for env_var in var.services["guest"].ecs_environment_variables :
+            for env_var in var.services["payment"].ecs_environment_variables :
             env_var
           ]
           health_check = {
-            command     = var.services["guest"].ecs_container_health_check.command
-            interval    = var.services["guest"].ecs_container_health_check.interval
-            timeout     = var.services["guest"].ecs_container_health_check.timeout
-            retries     = var.services["guest"].ecs_container_health_check.retries
-            startPeriod = var.services["guest"].ecs_container_health_check.startPeriod
+            command     = var.services["payment"].ecs_container_health_check.command
+            interval    = var.services["payment"].ecs_container_health_check.interval
+            timeout     = var.services["payment"].ecs_container_health_check.timeout
+            retries     = var.services["payment"].ecs_container_health_check.retries
+            startPeriod = var.services["payment"].ecs_container_health_check.startPeriod
+          }
+          depends_on = []
+        },
+        {
+          # Booking microservice - handles booking workflows alongside Payment
+          name                 = "booking-microservice"
+          image_repository_url = var.services["booking"].ecs_container_image_repository_url
+          image_tag            = var.services["booking"].ecs_container_image_tag
+          cpu                  = var.services["booking"].ecs_container_cpu
+          memory               = var.services["booking"].ecs_container_memory
+          essential            = var.services["booking"].ecs_container_essential
+          port_mappings        = var.services["booking"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["booking"].ecs_environment_variables :
+            env_var
+          ]
+          health_check = {
+            command     = var.services["booking"].ecs_container_health_check.command
+            interval    = var.services["booking"].ecs_container_health_check.interval
+            timeout     = var.services["booking"].ecs_container_health_check.timeout
+            retries     = var.services["booking"].ecs_container_health_check.retries
+            startPeriod = var.services["booking"].ecs_container_health_check.startPeriod
           }
           depends_on = []
         },
@@ -611,7 +676,7 @@ EOT
           depends_on = ["n8n"]
         },
         {
-          # API Gateway - depends on Guest microservice and n8n
+          # API Gateway - depends on Payment, Booking, and n8n services
           name                 = "api-gateway"
           image_repository_url = var.services["apigateway"].ecs_container_image_repository_url
           image_tag            = var.services["apigateway"].ecs_container_image_tag
@@ -630,7 +695,7 @@ EOT
             retries     = var.services["apigateway"].ecs_container_health_check.retries
             startPeriod = var.services["apigateway"].ecs_container_health_check.startPeriod
           }
-          depends_on = ["guest-microservice", "n8n"]
+          depends_on = ["payment-microservice", "booking-microservice", "n8n"]
         }
       ]
 

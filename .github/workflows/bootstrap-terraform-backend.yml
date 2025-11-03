@@ -84,5 +84,3 @@ jobs:
             -backend-config="dynamodb_table=${TABLE}" \
             -backend-config="encrypt=true" \
             -input=false
-
-

@@ -7,7 +7,7 @@
 .vscode/
 .env
 .fake
-.tfvars
+**/terraform-vars/
 docker-compose-production.yml
 cloudfront_private_key.pem
 ec2_private_key.pem
