@@ -18,6 +18,6 @@ terraform {
 
 
 provider "aws" {
-  region = var.aws_region  # Use variable to allow switching regions
+  region = var.aws_region # Use variable to allow switching regions
 
 }
