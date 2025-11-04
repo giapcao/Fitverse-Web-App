@@ -1,6 +1,10 @@
 locals {
   rabbitmq_host = "rabbitmq"
   redis_host    = "redis"
+  authentication_service_host = "authentication-service"
+  coach_service_host          = "coach-service"
+  payment_service_host        = "payment-service"
+  booking_service_host        = "booking-service"
 }
 
 # VPC Module
