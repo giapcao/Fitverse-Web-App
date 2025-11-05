@@ -35,6 +35,19 @@ public class WalletLedgerEntriesController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpGet("wallets/{walletId:guid}")]
+    [ProducesResponseType(typeof(WalletLedgerEntryResponse[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWalletLedgerEntriesByWalletId(Guid walletId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletLedgerEntriesQuery(walletId, null), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(WalletLedgerEntryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
