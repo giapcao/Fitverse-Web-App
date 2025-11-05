@@ -170,11 +170,72 @@ jobs:
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:${{ matrix.service }}-latest
           platforms: linux/amd64
 
+  build-and-push-api-gateway:
+    name: Build and Push API Gateway
+    runs-on: ubuntu-latest
+    needs: bootstrap-backend
+    environment:
+      name: ${{ inputs.environment }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-1' }}
+      PROJECT_NAME: ${{ vars.PROJECT_NAME || 'fitverse-infrastructure-giapcd0711' }}
+      ECR_REPO_NAME: ${{ vars.ECR_REPO_NAME || format('{0}-{1}-ecr', vars.PROJECT_NAME || 'fitverse-infrastructure-giapcd0711', inputs.environment) }}
+      API_GATEWAY_DIR: ApiGateway
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set image tag
+        id: set-tag
+        run: echo "IMAGE_TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - name: Locate Dockerfile
+        id: dockerfile
+        run: |
+          BASE="${{ env.API_GATEWAY_DIR }}"
+          for name in Dockerfile dockerfile DockerFile; do
+            if [ -f "$BASE/$name" ]; then
+              echo "path=$BASE/$name" >> "$GITHUB_OUTPUT"
+              echo "Found Dockerfile: $BASE/$name"
+              exit 0
+            fi
+          done
+          echo "No Dockerfile found in $BASE" >&2
+          exit 1
+
+      - name: Build and push API Gateway image
+        uses: docker/build-push-action@v5
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.set-tag.outputs.IMAGE_TAG }}
+        with:
+          context: ${{ env.API_GATEWAY_DIR }}
+          file: ${{ steps.dockerfile.outputs.path }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-latest
+          platforms: linux/amd64
+
   # Step 3: Terraform Deploy
   terraform-deploy:
     name: Terraform Deploy
     runs-on: ubuntu-latest
-    needs: [bootstrap-backend, build-and-push]
+    needs: [bootstrap-backend, build-and-push, build-and-push-api-gateway]
     if: always() && needs.bootstrap-backend.result == 'success'
     outputs:
       alb_dns_name: ${{ steps.terraform-outputs.outputs.alb_dns_name }}
@@ -376,13 +437,16 @@ jobs:
           echo "### 📦 Services Deployed:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # List discovered microservices
-          if [ "$DISCOVERED_SERVICES" != "[]" ] && [ -n "$DISCOVERED_SERVICES" ]; then
-            echo "$DISCOVERED_SERVICES" | jq -r '.[]' | while read -r service; do
-              echo "- ✅ $service" >> $GITHUB_STEP_SUMMARY
-            done
-          fi
-          
+          # List discovered microservices
+          if [ "$DISCOVERED_SERVICES" != "[]" ] && [ -n "$DISCOVERED_SERVICES" ]; then
+            echo "$DISCOVERED_SERVICES" | jq -r '.[]' | while read -r service; do
+              echo "- Microservice: $service" >> $GITHUB_STEP_SUMMARY
+            done
+          fi
+          if [ "${{ needs.build-and-push-api-gateway.result }}" == "success" ]; then
+            echo "- API Gateway" >> $GITHUB_STEP_SUMMARY
+          fi
+
           # List additional services from TERRAFORM_VARS_* (non-microservice containers)
           echo "$SECRETS_JSON" | jq -r 'to_entries[] | select(.key | startswith("TERRAFORM_VARS_")) | .key' | while read -r key; do
             suffix=$(echo "$key" | sed 's/^TERRAFORM_VARS_//' | tr '[:upper:]' '[:lower:]')
@@ -400,7 +464,7 @@ jobs:
   deployment-summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [bootstrap-backend, discover-services, build-and-push, terraform-deploy]
+    needs: [bootstrap-backend, discover-services, build-and-push, build-and-push-api-gateway, terraform-deploy]
     if: always()
     environment:
       name: ${{ inputs.environment }}
@@ -436,6 +500,7 @@ jobs:
           echo "| Bootstrap Backend | ${{ needs.bootstrap-backend.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Service Discovery | ${{ needs.discover-services.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build & Push ECR | ${{ needs.build-and-push.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Push API Gateway | ${{ needs.build-and-push-api-gateway.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Terraform Deploy | ${{ needs.terraform-deploy.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
