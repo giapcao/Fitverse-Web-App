@@ -35,6 +35,20 @@ public class WalletBalancesController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpGet("users/{userId:guid}")]
+    [ProducesResponseType(typeof(WalletBalanceResponse[]), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWalletBalancesByUserId(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletBalancesByUserIdQuery(userId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(WalletBalanceResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.WalletJournals.Commands;
 using Application.WalletJournals.Queries;
+using Application.Wallets.Queries;
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +28,32 @@ public class WalletJournalsController : ApiController
     public async Task<IActionResult> GetWalletJournals([FromQuery] Guid? bookingId, [FromQuery] Guid? paymentId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetWalletJournalsQuery(bookingId, paymentId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("wallets/{walletId:guid}")]
+    [ProducesResponseType(typeof(WalletJournalResponse[]), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWalletJournalsByWalletId(Guid walletId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletJournalsByWalletIdQuery(walletId), cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("wallets/{walletId:guid}/details")]
+    [ProducesResponseType(typeof(WalletHistoryResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetWalletHistoryByWalletId(Guid walletId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWalletHistoryByWalletIdQuery(walletId), cancellationToken);
         if (result.IsFailure)
         {
             return HandleFailure(result);
