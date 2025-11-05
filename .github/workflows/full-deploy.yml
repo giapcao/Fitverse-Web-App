@@ -227,8 +227,8 @@ jobs:
           file: ${{ steps.dockerfile.outputs.path }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-${{ env.IMAGE_TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:ApiGateway-${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:ApiGateway-latest
           platforms: linux/amd64
 
   # Step 3: Terraform Deploy
@@ -437,16 +437,25 @@ jobs:
           echo "### 📦 Services Deployed:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          # List discovered microservices
-          if [ "$DISCOVERED_SERVICES" != "[]" ] && [ -n "$DISCOVERED_SERVICES" ]; then
-            echo "$DISCOVERED_SERVICES" | jq -r '.[]' | while read -r service; do
-              echo "- Microservice: $service" >> $GITHUB_STEP_SUMMARY
-            done
-          fi
-          if [ "${{ needs.build-and-push-api-gateway.result }}" == "success" ]; then
-            echo "- API Gateway" >> $GITHUB_STEP_SUMMARY
-          fi
-
+          # List discovered microservices
+
+          if [ "$DISCOVERED_SERVICES" != "[]" ] && [ -n "$DISCOVERED_SERVICES" ]; then
+
+            echo "$DISCOVERED_SERVICES" | jq -r '.[]' | while read -r service; do
+
+              echo "- Microservice: $service" >> $GITHUB_STEP_SUMMARY
+
+            done
+
+          fi
+
+          if [ "${{ needs.build-and-push-api-gateway.result }}" == "success" ]; then
+
+            echo "- ApiGateway-latest" >> $GITHUB_STEP_SUMMARY
+          fi
+
+
+
           # List additional services from TERRAFORM_VARS_* (non-microservice containers)
           echo "$SECRETS_JSON" | jq -r 'to_entries[] | select(.key | startswith("TERRAFORM_VARS_")) | .key' | while read -r key; do
             suffix=$(echo "$key" | sed 's/^TERRAFORM_VARS_//' | tr '[:upper:]' '[:lower:]')
@@ -526,3 +535,4 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
           fi
+
