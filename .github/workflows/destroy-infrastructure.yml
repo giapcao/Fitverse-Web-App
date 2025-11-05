@@ -1,0 +1,171 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "GitHub Environment to use."
+        type: string
+        default: infrastructure-giapcd0711
+        required: true
+      confirm_destroy:
+        description: 'Type "DESTROY" (uppercase) to confirm full teardown'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  PROJECT_NAME: ${{ vars.PROJECT_NAME || 'microservices-dot-net-template' }}
+
+jobs:
+  destroy:
+    name: terraform-destroy-all
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    if: ${{ inputs.confirm_destroy == 'DESTROY' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Write Terraform variables from secrets
+        working-directory: Terraform
+        env:
+          SECRETS_JSON: ${{ toJson(secrets) }}
+        run: |
+          set -euo pipefail
+
+          # Bring repo-provided defaults into working dir if present
+          if ls ../terraform-vars/*.auto.tfvars >/dev/null 2>&1; then
+            echo "Copying repo tfvars from terraform-vars/"
+            cp ../terraform-vars/*.auto.tfvars . || true
+          fi
+
+          # Ensure jq is available
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y jq
+          fi
+
+          echo "Processing TERRAFORM_VARS_* secrets"
+          echo "$SECRETS_JSON" \
+            | jq -r 'to_entries[] | select(.key | startswith("TERRAFORM_VARS_")) | .key' \
+            | sort \
+            | while read -r key; do
+                suffix=${key#TERRAFORM_VARS_}
+                norm=$(echo "$suffix" \
+                  | tr '[:upper:]' '[:lower:]' \
+                  | sed 's/^\s\+//;s/\s\+$//' \
+                  | tr ' /\' '___' )
+                value=$(jq -r --arg k "$key" '.[$k]' <<< "$SECRETS_JSON")
+
+                if [ -z "$suffix" ]; then
+                  echo "Skipping empty suffix for key: $key"
+                  continue
+                fi
+
+                if echo "$value" | jq -e . >/dev/null 2>&1; then
+                  case "$norm" in
+                    *.auto.tfvars.json|*.tfvars.json) filename="$norm";;
+                    *.auto.tfvars|*.tfvars)           filename="$norm.json";;
+                    *)                                 filename="$norm.auto.tfvars.json";;
+                  esac
+                  echo "Creating $filename from $key (JSON)"
+                  printf '%s' "$value" > "$filename"
+                else
+                  case "$norm" in
+                    *.auto.tfvars|*.tfvars)           filename="$norm";;
+                    *.auto.tfvars.json|*.tfvars.json) filename="${norm%.json}";;
+                    *)                                 filename="$norm.auto.tfvars";;
+                  esac
+                  echo "Creating $filename from $key (HCL/raw)"
+                  printf '%s' "$value" > "$filename"
+                fi
+
+                if [ -f "$filename" ]; then
+                  echo "Successfully created $filename ($(wc -l < "$filename") lines)"
+                else
+                  echo "ERROR: Failed to create $filename"
+                fi
+              done
+
+          echo "Merging all HCL/JSON tfvars into 00-all.auto.tfvars.json"
+          sudo apt-get update -y >/dev/null
+          sudo apt-get install -y python3-pip >/dev/null
+          python3 -m pip install --user python-hcl2 >/dev/null
+          export PATH="$HOME/.local/bin:$PATH"
+          python3 scripts/merge_tfvars.py
+
+          for f in *.auto.tfvars *.auto.tfvars.json; do
+            [ "$f" = "00-all.auto.tfvars.json" ] && continue || true
+            rm -f "$f" || true
+          done
+
+      - name: Terraform Init (root module)
+        working-directory: Terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.PROJECT_NAME }}-${{ env.AWS_REGION }}-terraform-state" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ env.PROJECT_NAME }}-${{ env.AWS_REGION }}-terraform-locks"
+
+      - name: Terraform Destroy (root infrastructure)
+        working-directory: Terraform
+        run: terraform destroy -auto-approve
+
+      - name: Empty backend S3 bucket versions
+        env:
+          BUCKET_NAME: ${{ format('{0}-{1}-terraform-state', env.PROJECT_NAME, env.AWS_REGION) }}
+        run: |
+          set -euo pipefail
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" >/dev/null 2>&1; then
+            echo "Emptying versioned objects in $BUCKET_NAME"
+            if ! command -v jq >/dev/null 2>&1; then
+              sudo apt-get update && sudo apt-get install -y jq
+            fi
+            while true; do
+              versions=$(aws s3api list-object-versions --bucket "$BUCKET_NAME" --output json)
+              to_delete=$(echo "$versions" | jq -c '{Objects: ((.Versions // []) + (.DeleteMarkers // [])) | map({Key: .Key, VersionId: .VersionId})}')
+              count=$(echo "$to_delete" | jq '.Objects | length')
+              if [ "$count" -eq 0 ]; then
+                break
+              fi
+              echo "Deleting $count object versions..."
+              aws s3api delete-objects --bucket "$BUCKET_NAME" --delete "$to_delete" >/dev/null
+            done
+          else
+            echo "Bucket $BUCKET_NAME not found, skipping empty step"
+          fi
+
+      - name: Destroy Terraform backend resources
+        working-directory: Terraform/bootstrap
+        env:
+          TF_VAR_region: ${{ env.AWS_REGION }}
+          TF_VAR_project_name: ${{ env.PROJECT_NAME }}
+        run: |
+          terraform init -input=false
+          terraform destroy -input=false -auto-approve
+
+  confirm-warning:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.confirm_destroy != 'DESTROY' }}
+    steps:
+      - name: Fail due to missing confirmation
+        run: |
+          echo "::error::Destroy workflow requires confirm_destroy input to be exactly 'DESTROY'."
+          exit 1
