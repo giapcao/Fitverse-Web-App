@@ -1,82 +1,10 @@
 locals {
-  service_connect_domain = var.enable_service_connect ? "${var.project_name}.${var.service_discovery_domain_suffix}" : null
-
-  service_env_var_maps = {
-    for svc_name, svc in var.services :
-    svc_name => {
-      for env_var in try(svc.ecs_environment_variables, []) :
-      env_var.name => env_var.value
-    }
-  }
-
-  service_dns_names = {
-    for svc_name, svc in var.services :
-    svc_name => (
-      local.service_connect_domain != null && try(svc.ecs_service_connect_dns_name, "") != "" ?
-      "${svc.ecs_service_connect_dns_name}.${local.service_connect_domain}" :
-      try(svc.ecs_service_connect_dns_name, svc_name)
-    )
-  }
-
-  service_primary_ports = {
-    for svc_name, svc in var.services :
-    svc_name => try(svc.ecs_container_port_mappings[0].container_port, null)
-  }
-
-  rabbitmq_dns  = lookup(local.service_dns_names, "rabbitmq", null)
-  rabbitmq_port = lookup(local.service_primary_ports, "rabbitmq", 5672)
-  rabbitmq_env  = lookup(local.service_env_var_maps, "rabbitmq", {})
-  rabbitmq_user = lookup(rabbitmq_env, "RABBITMQ_DEFAULT_USER", "")
-  rabbitmq_pass = lookup(rabbitmq_env, "RABBITMQ_DEFAULT_PASS", "")
-
-  redis_dns      = lookup(local.service_dns_names, "redis", null)
-  redis_port     = lookup(local.service_primary_ports, "redis", 6379)
-  redis_env      = lookup(local.service_env_var_maps, "redis", {})
-  redis_password = lookup(redis_env, "REDIS_PASSWORD", "")
-
-  rabbitmq_dependency_defaults = rabbitmq_dns != null ? merge(
-    {
-      RABBITMQ_HOST = rabbitmq_dns
-      RABBITMQ_PORT = tostring(rabbitmq_port)
-    },
-    rabbitmq_user != "" ? { RABBITMQ_USERNAME = rabbitmq_user } : {},
-    rabbitmq_pass != "" ? { RABBITMQ_PASSWORD = rabbitmq_pass } : {},
-    rabbitmq_user != "" && rabbitmq_pass != "" ? {
-      RABBITMQ_URL = format(
-        "amqp://%s:%s@%s:%s/",
-        rabbitmq_user,
-        rabbitmq_pass,
-        rabbitmq_dns,
-        rabbitmq_port
-      )
-    } : {}
-  ) : {}
-
-  redis_dependency_defaults = redis_dns != null ? merge(
-    {
-      REDIS_HOST = redis_dns
-      REDIS_PORT = tostring(redis_port)
-    },
-    redis_password != "" ? { REDIS_PASSWORD = redis_password } : {}
-  ) : {}
-
-  service_dependency_defaults = {
-    for svc_name in ["authentication", "coach", "payment", "booking"] :
-    svc_name => merge(local.rabbitmq_dependency_defaults, local.redis_dependency_defaults)
-  }
-
-  merged_service_env_vars = {
-    for svc_name, env_map in local.service_env_var_maps :
-    svc_name => [
-      for key, value in merge(
-        lookup(local.service_dependency_defaults, svc_name, {}),
-        env_map
-        ) : {
-        name  = key
-        value = value
-      }
-    ]
-  }
+  rabbitmq_host = "rabbitmq"
+  redis_host    = "redis"
+  authentication_service_host = "authentication-service"
+  coach_service_host          = "coach-service"
+  payment_service_host        = "payment-service"
+  booking_service_host        = "booking-service"
 }
 
 # VPC Module
@@ -374,7 +302,7 @@ module "ecs_server1" {
           memory                = var.services["rabbitmq"].ecs_container_memory
           essential             = var.services["rabbitmq"].ecs_container_essential
           port_mappings         = var.services["rabbitmq"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "rabbitmq", var.services["rabbitmq"].ecs_environment_variables)
+          environment_variables = var.services["rabbitmq"].ecs_environment_variables
           health_check = {
             command     = var.services["rabbitmq"].ecs_container_health_check.command
             interval    = var.services["rabbitmq"].ecs_container_health_check.interval
@@ -399,7 +327,7 @@ module "ecs_server1" {
           memory                = var.services["redis"].ecs_container_memory
           essential             = var.services["redis"].ecs_container_essential
           port_mappings         = var.services["redis"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "redis", var.services["redis"].ecs_environment_variables)
+          environment_variables = var.services["redis"].ecs_environment_variables
           command               = lookup(var.services["redis"], "command", null)
           health_check = {
             command     = var.services["redis"].ecs_container_health_check.command
@@ -418,14 +346,17 @@ module "ecs_server1" {
         },
         {
           # Authentication microservice - depends on RabbitMQ and Redis
-          name                  = "authentication-microservice"
-          image_repository_url  = var.services["authentication"].ecs_container_image_repository_url
-          image_tag             = var.services["authentication"].ecs_container_image_tag
-          cpu                   = var.services["authentication"].ecs_container_cpu
-          memory                = var.services["authentication"].ecs_container_memory
-          essential             = var.services["authentication"].ecs_container_essential
-          port_mappings         = var.services["authentication"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "authentication", var.services["authentication"].ecs_environment_variables)
+          name                 = "authentication-microservice"
+          image_repository_url = var.services["authentication"].ecs_container_image_repository_url
+          image_tag            = var.services["authentication"].ecs_container_image_tag
+          cpu                  = var.services["authentication"].ecs_container_cpu
+          memory               = var.services["authentication"].ecs_container_memory
+          essential            = var.services["authentication"].ecs_container_essential
+          port_mappings        = var.services["authentication"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["authentication"].ecs_environment_variables :
+            env_var
+          ]
           health_check = {
             command     = var.services["authentication"].ecs_container_health_check.command
             interval    = var.services["authentication"].ecs_container_health_check.interval
@@ -437,14 +368,17 @@ module "ecs_server1" {
         },
         {
           # Coach microservice - depends on RabbitMQ and Redis
-          name                  = "coach-microservice"
-          image_repository_url  = var.services["coach"].ecs_container_image_repository_url
-          image_tag             = var.services["coach"].ecs_container_image_tag
-          cpu                   = var.services["coach"].ecs_container_cpu
-          memory                = var.services["coach"].ecs_container_memory
-          essential             = var.services["coach"].ecs_container_essential
-          port_mappings         = var.services["coach"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "coach", var.services["coach"].ecs_environment_variables)
+          name                 = "coach-microservice"
+          image_repository_url = var.services["coach"].ecs_container_image_repository_url
+          image_tag            = var.services["coach"].ecs_container_image_tag
+          cpu                  = var.services["coach"].ecs_container_cpu
+          memory               = var.services["coach"].ecs_container_memory
+          essential            = var.services["coach"].ecs_container_essential
+          port_mappings        = var.services["coach"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["coach"].ecs_environment_variables :
+            env_var
+          ]
           health_check = {
             command     = var.services["coach"].ecs_container_health_check.command
             interval    = var.services["coach"].ecs_container_health_check.interval
@@ -548,14 +482,17 @@ module "ecs_server2" {
       containers = [
         {
           # Payment microservice - ensures transaction flow prior to dependent services
-          name                  = "payment-microservice"
-          image_repository_url  = var.services["payment"].ecs_container_image_repository_url
-          image_tag             = var.services["payment"].ecs_container_image_tag
-          cpu                   = var.services["payment"].ecs_container_cpu
-          memory                = var.services["payment"].ecs_container_memory
-          essential             = var.services["payment"].ecs_container_essential
-          port_mappings         = var.services["payment"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "payment", var.services["payment"].ecs_environment_variables)
+          name                 = "payment-microservice"
+          image_repository_url = var.services["payment"].ecs_container_image_repository_url
+          image_tag            = var.services["payment"].ecs_container_image_tag
+          cpu                  = var.services["payment"].ecs_container_cpu
+          memory               = var.services["payment"].ecs_container_memory
+          essential            = var.services["payment"].ecs_container_essential
+          port_mappings        = var.services["payment"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["payment"].ecs_environment_variables :
+            env_var
+          ]
           health_check = {
             command     = var.services["payment"].ecs_container_health_check.command
             interval    = var.services["payment"].ecs_container_health_check.interval
@@ -567,14 +504,17 @@ module "ecs_server2" {
         },
         {
           # Booking microservice - handles booking workflows alongside Payment
-          name                  = "booking-microservice"
-          image_repository_url  = var.services["booking"].ecs_container_image_repository_url
-          image_tag             = var.services["booking"].ecs_container_image_tag
-          cpu                   = var.services["booking"].ecs_container_cpu
-          memory                = var.services["booking"].ecs_container_memory
-          essential             = var.services["booking"].ecs_container_essential
-          port_mappings         = var.services["booking"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "booking", var.services["booking"].ecs_environment_variables)
+          name                 = "booking-microservice"
+          image_repository_url = var.services["booking"].ecs_container_image_repository_url
+          image_tag            = var.services["booking"].ecs_container_image_tag
+          cpu                  = var.services["booking"].ecs_container_cpu
+          memory               = var.services["booking"].ecs_container_memory
+          essential            = var.services["booking"].ecs_container_essential
+          port_mappings        = var.services["booking"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["booking"].ecs_environment_variables :
+            env_var
+          ]
           health_check = {
             command     = var.services["booking"].ecs_container_health_check.command
             interval    = var.services["booking"].ecs_container_health_check.interval
@@ -586,14 +526,17 @@ module "ecs_server2" {
         },
         {
           # API Gateway - depends on Payment and Booking services
-          name                  = "api-gateway"
-          image_repository_url  = var.services["apigateway"].ecs_container_image_repository_url
-          image_tag             = var.services["apigateway"].ecs_container_image_tag
-          cpu                   = var.services["apigateway"].ecs_container_cpu
-          memory                = var.services["apigateway"].ecs_container_memory
-          essential             = var.services["apigateway"].ecs_container_essential
-          port_mappings         = var.services["apigateway"].ecs_container_port_mappings
-          environment_variables = lookup(local.merged_service_env_vars, "apigateway", var.services["apigateway"].ecs_environment_variables)
+          name                 = "api-gateway"
+          image_repository_url = var.services["apigateway"].ecs_container_image_repository_url
+          image_tag            = var.services["apigateway"].ecs_container_image_tag
+          cpu                  = var.services["apigateway"].ecs_container_cpu
+          memory               = var.services["apigateway"].ecs_container_memory
+          essential            = var.services["apigateway"].ecs_container_essential
+          port_mappings        = var.services["apigateway"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["apigateway"].ecs_environment_variables :
+            env_var
+          ]
           health_check = {
             command     = var.services["apigateway"].ecs_container_health_check.command
             interval    = var.services["apigateway"].ecs_container_health_check.interval
