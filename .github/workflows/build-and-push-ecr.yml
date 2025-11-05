@@ -252,8 +252,8 @@ jobs:
           file: ${{ steps.dockerfile.outputs.path }}
           push: true
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-${{ env.IMAGE_TAG }}
-            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-latest
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:ApiGateway-${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:ApiGateway-latest
           cache-from: |
             type=gha,scope=api-gateway
             type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_NAME }}:api-gateway-cache
@@ -265,16 +265,16 @@ jobs:
       - name: Output API Gateway build information
         run: |
           echo "Successfully built and pushed API Gateway"
-          echo "Image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:api-gateway-${{ steps.set-tag.outputs.IMAGE_TAG }}"
+          echo "Image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}:ApiGateway-${{ steps.set-tag.outputs.IMAGE_TAG }}"
           echo ""
           echo "=== Terraform Configuration ==="
           echo "Update your Terraform variables.tf with:"
           echo ""
           echo "api_gateway_image_repository_url = \"${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPO_NAME }}\""
-          echo "api_gateway_image_tag            = \"api-gateway-${{ steps.set-tag.outputs.IMAGE_TAG }}\""
+          echo "ecs_container_image_tag            = \"ApiGateway-${{ steps.set-tag.outputs.IMAGE_TAG }}\""
           echo ""
           echo "Or use latest tag:"
-          echo "api_gateway_image_tag            = \"api-gateway-latest\""
+          echo "ecs_container_image_tag            = \"ApiGateway-latest\""
           echo "=================================="
 
       - name: Append API Gateway image details
@@ -286,7 +286,7 @@ jobs:
           echo "| Project | ${{ env.PROJECT_NAME }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Repository | ${{ env.ECR_REPO_NAME }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Region | ${{ env.AWS_REGION }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Image Tag | api-gateway-${{ steps.set-tag.outputs.IMAGE_TAG }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Tag | ApiGateway-${{ steps.set-tag.outputs.IMAGE_TAG }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "API Gateway image stored at:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
@@ -364,7 +364,7 @@ jobs:
               echo "ecs_container_image_tag = \"${service}-latest\"  # or use specific SHA tag" >> $GITHUB_STEP_SUMMARY
             done
             echo "# API Gateway image tag:" >> $GITHUB_STEP_SUMMARY
-            echo "api_gateway_image_tag = \"api-gateway-latest\"  # or use specific SHA tag" >> $GITHUB_STEP_SUMMARY
+            echo "ecs_container_image_tag = \"ApiGateway-latest\"  # or use specific SHA tag" >> $GITHUB_STEP_SUMMARY
 
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -374,7 +374,7 @@ jobs:
             echo "$SERVICES" | jq -r '.[]' | while read service; do
               echo "- ✅ **$service**: \`${service}-latest\`" >> $GITHUB_STEP_SUMMARY
             done
-            echo "- ? **API Gateway**: \`api-gateway-latest\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ? **API Gateway**: \`ApiGateway-latest\`" >> $GITHUB_STEP_SUMMARY
 
 
 
@@ -388,3 +388,4 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Build completed with warnings or was skipped." >> $GITHUB_STEP_SUMMARY
           fi
+
