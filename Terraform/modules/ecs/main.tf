@@ -128,6 +128,9 @@ resource "aws_ecs_task_definition" "this" {
       lookup(c, "command", null) != null ? {
         command = c.command
       } : {},
+      try(c.memory_reservation, null) != null ? {
+        memoryReservation = c.memory_reservation
+      } : {},
       lookup(c, "health_check", null) != null ? {
         healthCheck = {
           command     = c.health_check.command
