@@ -113,6 +113,7 @@ var app = builder.Build();
 // Health check endpoints
 app.MapGet("/health", () => new { status = "ok" });
 
+
 app.UseSwagger();
 
 if (app.Environment.IsDevelopment())
@@ -141,6 +142,5 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-app.MapGet("/api/health", () => Results.Ok("Booking microservice is running."));
 
 app.Run();

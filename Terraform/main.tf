@@ -33,7 +33,7 @@ module "alb" {
       target_type = var.services["apigateway"].alb_target_group_type
       health_check = {
         enabled             = true
-        path                = "/api/health"
+        path                = "/health"
         port                = var.services["apigateway"].alb_health_check.port
         protocol            = var.services["apigateway"].alb_health_check.protocol
         matcher             = var.services["apigateway"].alb_health_check.matcher
