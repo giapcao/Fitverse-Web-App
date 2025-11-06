@@ -120,7 +120,6 @@ var app = builder.Build();
 
 // Health check endpoints
 app.MapGet("/health", () => new { status = "ok" });
-app.MapGet("/api/health", () => new { status = "ok" });
 
 if (app.Environment.IsDevelopment())
 {
