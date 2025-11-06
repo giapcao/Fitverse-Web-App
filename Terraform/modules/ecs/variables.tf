@@ -123,6 +123,7 @@ variable "service_definitions" {
       image_tag            = string
       cpu                  = number
       memory               = number
+      memory_reservation   = optional(number)
       essential            = optional(bool, true)
       command              = optional(list(string))
       port_mappings = optional(list(object({

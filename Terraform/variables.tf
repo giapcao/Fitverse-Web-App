@@ -105,6 +105,7 @@ variable "services" {
     ecs_container_image_tag            = string
     ecs_container_cpu                  = number
     ecs_container_memory               = number
+    ecs_container_memory_reservation   = optional(number)
     ecs_container_essential            = bool
     ecs_container_port_mappings = list(object({
       container_port = number

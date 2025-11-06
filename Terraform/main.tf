@@ -33,7 +33,7 @@ module "alb" {
       target_type = var.services["apigateway"].alb_target_group_type
       health_check = {
         enabled             = true
-        path                = "/api/health"
+        path                = "/health"
         port                = var.services["apigateway"].alb_health_check.port
         protocol            = var.services["apigateway"].alb_health_check.protocol
         matcher             = var.services["apigateway"].alb_health_check.matcher
@@ -300,6 +300,7 @@ module "ecs_server1" {
           image_tag             = var.services["rabbitmq"].ecs_container_image_tag
           cpu                   = var.services["rabbitmq"].ecs_container_cpu
           memory                = var.services["rabbitmq"].ecs_container_memory
+          memory_reservation    = var.services["rabbitmq"].ecs_container_memory_reservation
           essential             = var.services["rabbitmq"].ecs_container_essential
           port_mappings         = var.services["rabbitmq"].ecs_container_port_mappings
           environment_variables = var.services["rabbitmq"].ecs_environment_variables
@@ -325,6 +326,7 @@ module "ecs_server1" {
           image_tag             = var.services["redis"].ecs_container_image_tag
           cpu                   = var.services["redis"].ecs_container_cpu
           memory                = var.services["redis"].ecs_container_memory
+          memory_reservation    = var.services["redis"].ecs_container_memory_reservation
           essential             = var.services["redis"].ecs_container_essential
           port_mappings         = var.services["redis"].ecs_container_port_mappings
           environment_variables = var.services["redis"].ecs_environment_variables
@@ -351,6 +353,7 @@ module "ecs_server1" {
           image_tag            = var.services["authentication"].ecs_container_image_tag
           cpu                  = var.services["authentication"].ecs_container_cpu
           memory               = var.services["authentication"].ecs_container_memory
+          memory_reservation   = var.services["authentication"].ecs_container_memory_reservation
           essential            = var.services["authentication"].ecs_container_essential
           port_mappings        = var.services["authentication"].ecs_container_port_mappings
           environment_variables = [
@@ -373,6 +376,7 @@ module "ecs_server1" {
           image_tag            = var.services["coach"].ecs_container_image_tag
           cpu                  = var.services["coach"].ecs_container_cpu
           memory               = var.services["coach"].ecs_container_memory
+          memory_reservation   = var.services["coach"].ecs_container_memory_reservation
           essential            = var.services["coach"].ecs_container_essential
           port_mappings        = var.services["coach"].ecs_container_port_mappings
           environment_variables = [
@@ -487,6 +491,7 @@ module "ecs_server2" {
           image_tag            = var.services["payment"].ecs_container_image_tag
           cpu                  = var.services["payment"].ecs_container_cpu
           memory               = var.services["payment"].ecs_container_memory
+          memory_reservation   = var.services["payment"].ecs_container_memory_reservation
           essential            = var.services["payment"].ecs_container_essential
           port_mappings        = var.services["payment"].ecs_container_port_mappings
           environment_variables = [
@@ -509,6 +514,7 @@ module "ecs_server2" {
           image_tag            = var.services["booking"].ecs_container_image_tag
           cpu                  = var.services["booking"].ecs_container_cpu
           memory               = var.services["booking"].ecs_container_memory
+          memory_reservation   = var.services["booking"].ecs_container_memory_reservation
           essential            = var.services["booking"].ecs_container_essential
           port_mappings        = var.services["booking"].ecs_container_port_mappings
           environment_variables = [
@@ -531,6 +537,7 @@ module "ecs_server2" {
           image_tag            = var.services["apigateway"].ecs_container_image_tag
           cpu                  = var.services["apigateway"].ecs_container_cpu
           memory               = var.services["apigateway"].ecs_container_memory
+          memory_reservation   = var.services["apigateway"].ecs_container_memory_reservation
           essential            = var.services["apigateway"].ecs_container_essential
           port_mappings        = var.services["apigateway"].ecs_container_port_mappings
           environment_variables = [
