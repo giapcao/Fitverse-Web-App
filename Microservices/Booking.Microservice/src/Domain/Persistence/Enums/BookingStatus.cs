@@ -29,6 +29,13 @@ public enum BookingStatus
     [JsonStringEnumMemberName("cancelled_by_coach")]
     CancelledByCoach,
 
+    [PgName("confirmed_by_user")]
+    [JsonStringEnumMemberName("confirmed_by_user")]
+    ConfirmedByUser,
+    [PgName("confirmed_by_coach")]
+    [JsonStringEnumMemberName("confirmed_by_coach")]
+    ConfirmedByCoach,
+
     [PgName("no_show")]
     [JsonStringEnumMemberName("no_show")]
     NoShow,

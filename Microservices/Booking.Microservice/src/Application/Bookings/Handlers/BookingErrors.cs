@@ -1,4 +1,5 @@
 using System;
+using Domain.Persistence.Enums;
 using SharedLibrary.Common.ResponseModel;
 
 namespace Application.Bookings.Handlers;
@@ -49,4 +50,12 @@ internal static class BookingErrors
 
     internal static Error BookingTimeslotMissing(Guid bookingId) =>
         new("Booking.BookingTimeslotMissing", $"Booking '{bookingId}' does not reference a timeslot.");
+
+    internal static Error InvalidStatusForConfirmation(Guid bookingId, BookingStatus currentStatus) =>
+        new("Booking.InvalidStatusForConfirmation",
+            $"Booking '{bookingId}' with status '{currentStatus}' cannot be updated via the confirmation endpoint.");
+
+    internal static Error InvalidRequestedConfirmationStatus(BookingStatus requestedStatus) =>
+        new("Booking.InvalidRequestedConfirmationStatus",
+            $"Requested confirmation status '{requestedStatus}' is not supported. Use 'ConfirmedByCoach' or 'ConfirmedByUser'.");
 }

@@ -207,6 +207,27 @@ public class BookingsController : ApiController
         return Ok(result.Value);
     }
 
+    [HttpPut("{id:guid}/confirmed-status")]
+    [ProducesResponseType(typeof(BookingDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateBookingStatus(Guid id, [FromBody] UpdateBookingStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (command.BookingId != Guid.Empty && command.BookingId != id)
+        {
+            return BadRequest("Route id and payload id must match.");
+        }
+
+        var enrichedCommand = command with { BookingId = id };
+        var result = await _mediator.Send(enrichedCommand, cancellationToken);
+        if (result.IsFailure)
+        {
+            return HandleFailure(result);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
