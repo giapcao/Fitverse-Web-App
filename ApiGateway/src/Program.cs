@@ -73,13 +73,23 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var swaggerEndpoints = new (string Url, string Name)[]
+{
+    ("/api/auth/swagger/v1/swagger.json", "Auth Service v1"),
+    ("/api/coach/swagger/v1/swagger.json", "Coach Service v1"),
+    ("/api/payment/swagger/v1/swagger.json", "Payment Service v1"),
+    ("/api/booking/swagger/v1/swagger.json", "Booking Service v1"),
+    ("/api/engage/swagger/v1/swagger.json", "Engage Service v1")
+};
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/api/auth/swagger/v1/swagger.json", "Auth Service v1");
-    c.SwaggerEndpoint("/api/coach/swagger/v1/swagger.json", "Coach Service v1");
-    c.SwaggerEndpoint("/api/payment/swagger/v1/swagger.json", "Payment Service v1");
-    c.SwaggerEndpoint("/api/booking/swagger/v1/swagger.json", "Booking Service v1");
+    foreach (var (url, name) in swaggerEndpoints)
+    {
+        c.SwaggerEndpoint(url, name);
+    }
+
     c.RoutePrefix = "docs";
 });
 
