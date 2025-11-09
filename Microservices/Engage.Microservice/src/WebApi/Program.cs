@@ -3,16 +3,15 @@ using System.Text.Json.Serialization;
 using Application;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
-using Domain.Persistence;
 using Domain.Persistence.Enums;
 using Infrastructure;
+using Infrastructure.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using SharedLibrary.Common;
 using SharedLibrary.Configs;
-using Options = Infrastructure.Common.Options;
 
 DotNetEnv.Env.Load();
 
@@ -45,7 +44,7 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Coach", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Engage", Version = "v1" });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -66,6 +65,7 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
     var xml = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xml);
     if (File.Exists(xmlPath))
@@ -74,28 +74,11 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-builder.Services
-    .AddOptions<Options.SmtpOptions>()
-    .Bind(builder.Configuration.GetSection("Smtp"))
-    .Validate(o => !string.IsNullOrWhiteSpace(o.Host), "Smtp:Host is required.")
-    .Validate(o => o.Port > 0, "Smtp:Port must be greater than 0.")
-    .Validate(o => !string.IsNullOrWhiteSpace(o.User), "Smtp:User is required.")
-    .Validate(o => !string.IsNullOrWhiteSpace(o.Pass), "Smtp:Pass is required.")
-    .Validate(o => !string.IsNullOrWhiteSpace(o.FromName), "Smtp:FromName is required.")
-    .ValidateOnStart();
-
-builder.Services
-    .AddOptions<Options.CoachAppOptions>()
-    .Bind(builder.Configuration.GetSection("CoachApp"))
-    .Validate(o => !string.IsNullOrWhiteSpace(o.DashboardUrl), "CoachApp:DashboardUrl is required.")
-    .ValidateOnStart();
-
 builder.Services.ConfigureOptions<DatabaseConfigSetup>();
-builder.Services.Configure<AwsS3Config>(builder.Configuration.GetSection("AwsS3"));
-builder.Services.AddDbContext<FitverseCoachDbContext>((sp, options) =>
+builder.Services.AddDbContext<FitverseEngageDbContext>((sp, optionsBuilder) =>
 {
     var dbConfig = sp.GetRequiredService<IOptions<DatabaseConfig>>().Value;
-    options.UseNpgsql(dbConfig.ConnectionString, npgsqlOptions =>
+    optionsBuilder.UseNpgsql(dbConfig.ConnectionString, npgsqlOptions =>
     {
         if (dbConfig.MaxRetryCount > 0)
         {
@@ -107,14 +90,15 @@ builder.Services.AddDbContext<FitverseCoachDbContext>((sp, options) =>
             npgsqlOptions.CommandTimeout(dbConfig.CommandTimeout);
         }
 
-        npgsqlOptions.MapEnum<KycStatus>("kyc_status_enum");
-        npgsqlOptions.MapEnum<CoachMediaType>("media_type_enum");
+        npgsqlOptions.MapEnum<CampaignStatus>("campaign_status_enum");
+        npgsqlOptions.MapEnum<DisputeStatus>("dispute_status_enum");
+        npgsqlOptions.MapEnum<NotificationChannel>("notification_channel_enum");
     });
 
     if (environment.IsDevelopment())
     {
-        options.EnableDetailedErrors(dbConfig.EnableDetailedErrors);
-        options.EnableSensitiveDataLogging(dbConfig.EnableSensitiveDataLogging);
+        optionsBuilder.EnableDetailedErrors(dbConfig.EnableDetailedErrors);
+        optionsBuilder.EnableSensitiveDataLogging(dbConfig.EnableSensitiveDataLogging);
     }
 });
 
@@ -125,7 +109,6 @@ builder.Services
 
 var app = builder.Build();
 
-// Health check endpoints
 app.MapGet("/health", () => new { status = "ok" });
 
 app.UseSwagger();
@@ -137,8 +120,8 @@ if (app.Environment.IsDevelopment())
     {
         foreach (var description in provider.ApiVersionDescriptions)
         {
-            c.SwaggerEndpoint($"coach/swagger/{description.GroupName}/swagger.json", 
-            $"Coach APPPI {description.GroupName.ToUpperInvariant()}");
+            c.SwaggerEndpoint($"engage/swagger/{description.GroupName}/swagger.json",
+                $"Engage API {description.GroupName.ToUpperInvariant()}");
         }
 
         c.RoutePrefix = "swagger";
