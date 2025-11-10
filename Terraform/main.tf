@@ -455,6 +455,17 @@ module "ecs_server2" {
         ]
       },
       {
+        # Publish engage-service to namespace
+        port_name      = var.services["engage"].ecs_service_connect_port_name
+        discovery_name = var.services["engage"].ecs_service_connect_discovery_name
+        client_aliases = [
+          {
+            dns_name = var.services["engage"].ecs_service_connect_dns_name
+            port     = var.services["engage"].ecs_container_port_mappings[0].container_port
+          }
+        ]
+      },
+      {
         # Publish API Gateway to namespace
         port_name      = var.services["apigateway"].ecs_service_connect_port_name
         discovery_name = var.services["apigateway"].ecs_service_connect_discovery_name
@@ -471,8 +482,8 @@ module "ecs_server2" {
 
   service_definitions = {
     server-2 = {
-      task_cpu            = var.services["payment"].ecs_container_cpu + var.services["booking"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + 64
-      task_memory         = var.services["payment"].ecs_container_memory + var.services["booking"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + 128
+      task_cpu            = var.services["payment"].ecs_container_cpu + var.services["booking"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + var.service["engage"].ecs_container_cpu + 64
+      task_memory         = var.services["payment"].ecs_container_memory + var.services["booking"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + var.service["engage"].ecs_container_memory + 128
       desired_count       = 1
       assign_public_ip    = false
       enable_auto_scaling = false
@@ -531,6 +542,29 @@ module "ecs_server2" {
           depends_on = []
         },
         {
+          # Engage microservice - handles booking workflows alongside Payment
+          name                 = "engage-microservice"
+          image_repository_url = var.services["engage"].ecs_container_image_repository_url
+          image_tag            = var.services["engage"].ecs_container_image_tag
+          cpu                  = var.services["engage"].ecs_container_cpu
+          memory               = var.services["engage"].ecs_container_memory
+          memory_reservation   = var.services["engage"].ecs_container_memory_reservation
+          essential            = var.services["engage"].ecs_container_essential
+          port_mappings        = var.services["engage"].ecs_container_port_mappings
+          environment_variables = [
+            for env_var in var.services["engage"].ecs_environment_variables :
+            env_var
+          ]
+          health_check = {
+            command     = var.services["engage"].ecs_container_health_check.command
+            interval    = var.services["engage"].ecs_container_health_check.interval
+            timeout     = var.services["engage"].ecs_container_health_check.timeout
+            retries     = var.services["engage"].ecs_container_health_check.retries
+            startPeriod = var.services["engage"].ecs_container_health_check.startPeriod
+          }
+          depends_on = []
+        },
+        {
           # API Gateway - depends on Payment and Booking services
           name                 = "api-gateway"
           image_repository_url = var.services["apigateway"].ecs_container_image_repository_url
@@ -551,7 +585,7 @@ module "ecs_server2" {
             retries     = var.services["apigateway"].ecs_container_health_check.retries
             startPeriod = var.services["apigateway"].ecs_container_health_check.startPeriod
           }
-          depends_on = ["payment-microservice", "booking-microservice"]
+          depends_on = ["payment-microservice", "booking-microservice", "engage-microservice"]
         }
       ]
 
