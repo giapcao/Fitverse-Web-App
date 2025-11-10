@@ -138,7 +138,7 @@ if (app.Environment.IsDevelopment())
         foreach (var description in provider.ApiVersionDescriptions)
         {
             c.SwaggerEndpoint($"coach/swagger/{description.GroupName}/swagger.json", 
-            $"Coach APPPI {description.GroupName.ToUpperInvariant()}");
+            $"Coach API {description.GroupName.ToUpperInvariant()}");
         }
 
         c.RoutePrefix = "swagger";
