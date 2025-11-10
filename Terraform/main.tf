@@ -482,8 +482,8 @@ module "ecs_server2" {
 
   service_definitions = {
     server-2 = {
-      task_cpu            = var.services["payment"].ecs_container_cpu + var.services["booking"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + var.service["engage"].ecs_container_cpu + 64
-      task_memory         = var.services["payment"].ecs_container_memory + var.services["booking"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + var.service["engage"].ecs_container_memory + 128
+      task_cpu            = var.services["payment"].ecs_container_cpu + var.services["booking"].ecs_container_cpu + var.services["apigateway"].ecs_container_cpu + var.services["engage"].ecs_container_cpu + 64
+      task_memory         = var.services["payment"].ecs_container_memory + var.services["booking"].ecs_container_memory + var.services["apigateway"].ecs_container_memory + var.services["engage"].ecs_container_memory + 128
       desired_count       = 1
       assign_public_ip    = false
       enable_auto_scaling = false
