@@ -9,6 +9,7 @@ public interface IReviewRepository : IRepository<Review>
 
     Task<Review?> GetByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<Review>> GetAllReviewsAsync(CancellationToken cancellationToken);
+
     Task<IReadOnlyList<Review>> GetCoachReviewsAsync(Guid coachId, CancellationToken cancellationToken);
 }
-

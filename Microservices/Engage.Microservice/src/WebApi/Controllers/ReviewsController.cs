@@ -33,10 +33,26 @@ public class ReviewsController : ApiController
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        var query = new GetAllReviewsQuery();
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
+    }
+
     [HttpGet("{bookingId:guid}")]
     public async Task<IActionResult> GetByBooking(Guid bookingId, CancellationToken cancellationToken)
     {
         var query = new GetReviewByBookingIdQuery(bookingId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
+    }
+
+    [HttpGet("coach/{coachId:guid}")]
+    public async Task<IActionResult> GetByCoach(Guid coachId, CancellationToken cancellationToken)
+    {
+        var query = new GetCoachReviewsQuery(coachId);
         var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }

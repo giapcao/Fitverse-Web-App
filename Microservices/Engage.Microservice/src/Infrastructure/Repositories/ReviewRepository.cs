@@ -28,6 +28,14 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .FirstOrDefaultAsync(review => review.BookingId == bookingId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Review>> GetAllReviewsAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Reviews
+            .OrderByDescending(review => review.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Review>> GetCoachReviewsAsync(Guid coachId, CancellationToken cancellationToken)
     {
         return await _context.Reviews
@@ -37,4 +45,3 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .ToListAsync(cancellationToken);
     }
 }
-
