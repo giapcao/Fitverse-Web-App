@@ -56,4 +56,12 @@ public class ReviewsController : ApiController
         var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
     }
+
+    [HttpGet("user/{userId:guid}")]
+    public async Task<IActionResult> GetByUser(Guid userId, CancellationToken cancellationToken)
+    {
+        var query = new GetUserReviewsQuery(userId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : HandleFailure(result);
+    }
 }

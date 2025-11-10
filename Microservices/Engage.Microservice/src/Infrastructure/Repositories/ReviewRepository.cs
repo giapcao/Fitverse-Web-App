@@ -44,4 +44,13 @@ public class ReviewRepository : Repository<Review>, IReviewRepository
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Review>> GetUserReviewsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await _context.Reviews
+            .Where(review => review.UserId == userId)
+            .OrderByDescending(review => review.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
 }
